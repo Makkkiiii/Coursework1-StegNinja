@@ -1,4 +1,4 @@
-# RedTeam Steganography Toolkit Dependencies
+# StegNinja - Advanced Steganography Toolkit Dependencies
 
 # GUI Framework
 PyQt5>=5.15.0
@@ -11,8 +11,8 @@ numpy>=1.21.0
 # Cryptography
 cryptography>=3.4.0
 
-# Development Tools
-pytest>=7.0.0
-black>=22.0.0
-flake8>=4.0.0
-mypy>=0.910
+# Testing 
+unittest
+
+# For enhanced testing features, uncomment below:
+# pytest>=7.0.0
