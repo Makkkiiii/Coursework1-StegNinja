@@ -20,6 +20,7 @@ sys.path.insert(0, project_root)
 
 from src.core.image_stego import ImageSteganography
 from src.core.text_stego import TextSteganography
+from src.core.file_stego import FileSteganography
 from src.utils.crypto import CryptoManager
 
 
@@ -45,6 +46,12 @@ class WorkerThread(QThread):
                 self._embed_text()
             elif self.operation == "extract_text":
                 self._extract_text()
+            elif self.operation == "embed_file":
+                self._embed_file()
+            elif self.operation == "extract_file":
+                self._extract_file()
+            elif self.operation == "check_integrity":
+                self._check_integrity()
             elif self.operation == "analyze":
                 self._analyze()
         except Exception as e:
@@ -54,6 +61,8 @@ class WorkerThread(QThread):
         image_stego = ImageSteganography()
         crypto = self.kwargs.get('crypto')
         password = self.kwargs.get('password')
+        # strip_metadata = self.kwargs.get('strip_metadata', True)  # Removed - not working properly
+        preserve_timestamps = self.kwargs.get('preserve_timestamps', True)
         
         if crypto and crypto.is_key_set():
             image_stego.set_crypto_manager(crypto)
@@ -62,31 +71,46 @@ class WorkerThread(QThread):
             self.kwargs['image_path'],
             self.kwargs['message'],
             self.kwargs['output_path'],
-            password=password
+            password=password,
+            # strip_metadata=strip_metadata,  # Removed
+            preserve_timestamps=preserve_timestamps
         )
         
         if result:
-            self.finished.emit(True, "Message embedded successfully!")
+            # Include output path in success message for comparison display
+            output_path = self.kwargs['output_path']
+            self.finished.emit(True, f"EMBED_SUCCESS:{output_path}")
         else:
             self.finished.emit(False, "Failed to embed message.")
     
     def _extract_image(self):
         image_stego = ImageSteganography()
         crypto = self.kwargs.get('crypto')
-        password = None
+        password = self.kwargs.get('password')
         
-        if crypto and crypto.is_key_set():
-            image_stego.set_crypto_manager(crypto)
-            # Also get the password for direct passing to extract_text
-            password = self.kwargs.get('password')
-        
-        # Use extract_text to get decoded string instead of raw bytes
-        message = image_stego.extract_text(self.kwargs['image_path'], password=password)
-        
-        if message:
-            self.finished.emit(True, f"Extracted message: {message}")
-        else:
-            self.finished.emit(False, "No message found or extraction failed.")
+        try:
+            # If we have a password, use it directly instead of crypto manager
+            if password:
+                message = image_stego.extract_text(self.kwargs['image_path'], password=password)
+            elif crypto and crypto.is_key_set():
+                image_stego.set_crypto_manager(crypto)
+                message = image_stego.extract_text(self.kwargs['image_path'])
+            else:
+                message = image_stego.extract_text(self.kwargs['image_path'])
+            
+            if message:
+                self.finished.emit(True, f"Extracted message: {message}")
+            else:
+                self.finished.emit(False, "No message found or extraction failed.")
+        except ValueError as e:
+            if "Invalid password" in str(e):
+                self.finished.emit(False, "Invalid password or corrupted data")
+            elif "no password provided" in str(e):
+                self.finished.emit(False, "Data appears to be encrypted but no password provided")
+            else:
+                self.finished.emit(False, f"Extraction failed: {str(e)}")
+        except Exception as e:
+            self.finished.emit(False, f"Extraction failed: {str(e)}")
     
     def _embed_text(self):
         text_stego = TextSteganography()
@@ -122,17 +146,88 @@ class WorkerThread(QThread):
             # For text stego, we pass the password directly, not the crypto manager
             password = self.kwargs.get('password')
         
-        message = text_stego.extract(self.kwargs['stego_text'], method=method, password=password)
-        
-        if message:
-            self.finished.emit(True, f"Extracted message: {message}")
-        else:
-            self.finished.emit(False, "No hidden message found.")
+        try:
+            message = text_stego.extract(self.kwargs['stego_text'], method=method, password=password)
+            
+            if message:
+                self.finished.emit(True, f"Extracted message: {message}")
+            else:
+                self.finished.emit(False, "No hidden message found.")
+        except ValueError as e:
+            if "Invalid password" in str(e):
+                self.finished.emit(False, "Invalid password or corrupted data")
+            elif "no password provided" in str(e):
+                self.finished.emit(False, "Data appears to be encrypted but no password provided")
+            else:
+                self.finished.emit(False, f"Extraction failed: {str(e)}")
+        except Exception as e:
+            self.finished.emit(False, f"Extraction failed: {str(e)}")
     
-    def _analyze(self):
-        # Placeholder for analysis functionality
-        self.finished.emit(True, "Analysis completed.")
-
+    def _embed_file(self):
+        """Embed data in file using file steganography"""
+        file_stego = FileSteganography()
+        password = self.kwargs.get('password')
+        
+        result = file_stego.embed(
+            self.kwargs['cover_path'],
+            self.kwargs['payload'],
+            self.kwargs['output_path'],
+            password=password
+        )
+        
+        if result:
+            self.finished.emit(True, f"Successfully embedded data in file: {self.kwargs['output_path']}")
+        else:
+            self.finished.emit(False, "Failed to embed data in file.")
+    
+    def _extract_file(self):
+        """Extract data from file using file steganography"""
+        file_stego = FileSteganography()
+        password = self.kwargs.get('password')
+        
+        try:
+            message = file_stego.extract_text(self.kwargs['file_path'], password=password)
+            
+            if message:
+                self.finished.emit(True, f"Extracted message: {message}")
+            else:
+                self.finished.emit(False, "No hidden message found.")
+        except ValueError as e:
+            if "Invalid password" in str(e):
+                self.finished.emit(False, "Invalid password or corrupted data")
+            elif "no password provided" in str(e):
+                self.finished.emit(False, "Data appears to be encrypted but no password provided")
+            else:
+                self.finished.emit(False, f"Extraction failed: {str(e)}")
+        except Exception as e:
+            self.finished.emit(False, f"Extraction failed: {str(e)}")
+    
+    def _check_integrity(self):
+        """Check file integrity between two files"""
+        file_stego = FileSteganography()
+        
+        try:
+            result = file_stego.check_file_integrity(
+                self.kwargs['original_path'],
+                self.kwargs['modified_path']
+            )
+            
+            if result['files_exist']:
+                integrity_info = {
+                    'size_changed': result['size_changed'],
+                    'hash_changed': result['hash_changed'],
+                    'modification_time_changed': result['modification_time_changed'],
+                    'likely_modified': result['likely_modified'],
+                    'original_size': result['original_size'],
+                    'modified_size': result['modified_size'],
+                    'original_hash': result['original_hash'][:16] + '...',  # Show first 16 chars
+                    'modified_hash': result['modified_hash'][:16] + '...'   # Show first 16 chars
+                }
+                self.finished.emit(True, f"INTEGRITY_CHECK:{integrity_info}")
+            else:
+                self.finished.emit(False, "One or both files do not exist.")
+        except Exception as e:
+            self.finished.emit(False, f"Integrity check failed: {str(e)}")
 
 class ImageSteganographyTab(QWidget):
     """Tab for image steganography operations."""
@@ -149,7 +244,7 @@ class ImageSteganographyTab(QWidget):
         layout = QVBoxLayout()
         
         # Main splitter
-        splitter = QSplitter(Qt.Horizontal) # type: ignore
+        splitter = QSplitter(Qt.Orientation.Horizontal) # type: ignore
         
         # Left panel - Controls
         left_panel = self._create_left_panel()
@@ -213,8 +308,19 @@ class ImageSteganographyTab(QWidget):
         self.password_input.setEnabled(False)
         self.password_input.setPlaceholderText("Enter encryption password")
         
+        # Metadata options (removed - metadata extraction not working properly)
+        # self.strip_metadata = QCheckBox("Strip EXIF Metadata")
+        # self.strip_metadata.setChecked(True)
+        # self.strip_metadata.setToolTip("Remove EXIF metadata from output image for security")
+        
+        self.preserve_timestamps = QCheckBox("Preserve Timestamps")
+        self.preserve_timestamps.setChecked(True)
+        self.preserve_timestamps.setToolTip("Keep original file timestamps for stealth")
+        
         options_layout.addRow("Security:", self.use_encryption)
         options_layout.addRow("Password:", self.password_input)
+        # options_layout.addRow("Metadata:", self.strip_metadata)  # Removed
+        options_layout.addRow("Timestamps:", self.preserve_timestamps)
         options_group.setLayout(options_layout)
         
         # Action buttons
@@ -226,8 +332,13 @@ class ImageSteganographyTab(QWidget):
         self.extract_btn = QPushButton("Extract Message")
         self.extract_btn.clicked.connect(self.extract_message)
         
+        self.clear_btn = QPushButton("Clear All")
+        self.clear_btn.clicked.connect(self.clear_all)
+        self.clear_btn.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold;")
+        
         button_layout.addWidget(self.embed_btn)
         button_layout.addWidget(self.extract_btn)
+        button_layout.addWidget(self.clear_btn)
         
         # Results
         results_group = QGroupBox("Results")
@@ -252,47 +363,58 @@ class ImageSteganographyTab(QWidget):
         return widget
     
     def _create_right_panel(self) -> QWidget:
-        """Create the right image preview panel."""
+        """Create the right image preview panel with before/after comparison."""
         widget = QWidget()
         layout = QVBoxLayout()
-        
-        # Image preview
-        preview_group = QGroupBox("Image Preview")
-        preview_layout = QVBoxLayout()
-        
-        # Scrollable area for image
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setAlignment(Qt.AlignCenter) # type: ignore
-        scroll_area.setMinimumSize(500, 400)
-        
-        self.image_label = QLabel("No image loaded")
-        self.image_label.setAlignment(Qt.AlignCenter) # type: ignore
-        self.image_label.setScaledContents(True)
-        self.image_label.setStyleSheet("border: 1px solid gray;")
-        
-        scroll_area.setWidget(self.image_label)
-        preview_layout.addWidget(scroll_area)
-        preview_group.setLayout(preview_layout)
-        
+
+        # Comparison group
+        comparison_group = QGroupBox("Before/After Comparison")
+        comparison_layout = QHBoxLayout()
+
+        # Before image
+        self.before_image_label = QLabel("Original")
+        self.before_image_label.setAlignment(Qt.AlignCenter) # type: ignore
+        self.before_image_label.setScaledContents(True)
+        self.before_image_label.setStyleSheet("border: 1px solid #aaa;")
+        comparison_layout.addWidget(self.before_image_label)
+
+        # After image
+        self.after_image_label = QLabel("Stego")
+        self.after_image_label.setAlignment(Qt.AlignCenter) # type: ignore
+        self.after_image_label.setScaledContents(True)
+        self.after_image_label.setStyleSheet("border: 1px solid #aaa;")
+        comparison_layout.addWidget(self.after_image_label)
+
+        comparison_group.setLayout(comparison_layout)
+        layout.addWidget(comparison_group)
+
         # Image info
         info_group = QGroupBox("Image Information")
-        info_layout = QFormLayout()
+        info_layout = QVBoxLayout()
         
-        self.info_dimensions = QLabel("N/A")
-        self.info_size = QLabel("N/A")
-        self.info_format = QLabel("N/A")
-        self.info_capacity = QLabel("N/A")
+        # Basic info
+        basic_info_layout = QFormLayout()
+        self.info_dimensions = QLabel("")
+        self.info_format = QLabel("")
+        self.info_metrics = QLabel("")
+        basic_info_layout.addRow("Dimensions:", self.info_dimensions)
+        basic_info_layout.addRow("Format:", self.info_format)
+        basic_info_layout.addRow("Comparison:", self.info_metrics)
+        info_layout.addLayout(basic_info_layout)
         
-        info_layout.addRow("Dimensions:", self.info_dimensions)
-        info_layout.addRow("File Size:", self.info_size)
-        info_layout.addRow("Format:", self.info_format)
-        info_layout.addRow("Capacity:", self.info_capacity)
+        # Set maximum height to prevent excessive empty space
+        info_group.setMaximumHeight(120)
+        
+        # Metadata section removed - not working properly
+        # metadata_group = QGroupBox("Metadata Information")
+        # ... (entire metadata section removed)
+        
         info_group.setLayout(info_layout)
-        
-        layout.addWidget(preview_group)
         layout.addWidget(info_group)
         
+        # Add stretch to push content to top and eliminate empty space
+        layout.addStretch()
+
         widget.setLayout(layout)
         return widget
     
@@ -309,31 +431,51 @@ class ImageSteganographyTab(QWidget):
             self.load_image_preview(file_path)
     
     def load_image_preview(self, file_path: str):
-        """Load and display image preview."""
+        """Load and display image preview in both before/after labels."""
+        try:
+            # Load with PIL to get proper format info
+            from PIL import Image as PILImage
+            pil_image = PILImage.open(file_path)
+            image_format = pil_image.format or "Unknown"
+            
+            pixmap = QPixmap(file_path)
+            if not pixmap.isNull():
+                scaled_pixmap = pixmap.scaled(300, 225, Qt.KeepAspectRatio, Qt.SmoothTransformation) # type: ignore
+                self.before_image_label.setPixmap(scaled_pixmap)
+                self.info_dimensions.setText(f"{pixmap.width()} x {pixmap.height()}")
+                self.info_format.setText(image_format)
+                
+                # Load metadata - removed (not working properly)
+                # self.load_metadata(file_path, is_original=True)
+        except Exception as e:
+            self.before_image_label.setText(f"Error: {str(e)}")
+
+    def load_stego_image_preview(self, file_path: str):
+        """Load and display stego image in after label and show comparison metrics."""
         try:
             pixmap = QPixmap(file_path)
             if not pixmap.isNull():
-                # Scale image to fill more of the available space while maintaining aspect ratio
-                scaled_pixmap = pixmap.scaled(600, 450, Qt.KeepAspectRatio, Qt.SmoothTransformation) # type: ignore
-                self.image_label.setPixmap(scaled_pixmap)
+                scaled_pixmap = pixmap.scaled(300, 225, Qt.KeepAspectRatio, Qt.SmoothTransformation) # type: ignore
+                self.after_image_label.setPixmap(scaled_pixmap)
                 
-                # Update image info
-                self.info_dimensions.setText(f"{pixmap.width()} x {pixmap.height()}")
-                file_size = os.path.getsize(file_path)
-                self.info_size.setText(f"{file_size:,} bytes")
-                self.info_format.setText(os.path.splitext(file_path)[1].upper()[1:])
+                # Load metadata for stego image - removed (not working properly)
+                # self.load_metadata(file_path, is_original=False)
                 
-                # Calculate approximate capacity (simplified)
-                capacity = (pixmap.width() * pixmap.height() * 3) // 8  # Rough estimate
-                self.info_capacity.setText(f"~{capacity:,} characters")
+            # Show comparison metrics
+            from src.core.image_stego import ImageSteganography
+            metrics = ImageSteganography().get_image_comparison_metrics(self.current_image_path, file_path)
+            if metrics:
+                self.info_metrics.setText(f"MSE: {metrics['mse']:.2f}, PSNR: {metrics['psnr']:.2f}, SSIM: {metrics['ssim']:.3f}")
             else:
-                self.image_label.setText("Failed to load image")
+                self.info_metrics.setText("-")
         except Exception as e:
-            self.image_label.setText(f"Error loading image: {str(e)}")
+            self.after_image_label.setText(f"Error: {str(e)}")
+    
+    # load_metadata function removed - metadata display not working properly
     
     def toggle_encryption(self, state):
         """Toggle encryption password input."""
-        self.password_input.setEnabled(state == Qt.Checked) # type: ignore
+        self.password_input.setEnabled(state == Qt.CheckState.Checked) # type: ignore
         if state != Qt.Checked: # type: ignore
             self.password_input.clear()
     
@@ -351,7 +493,7 @@ class ImageSteganographyTab(QWidget):
         # Get output path
         output_path, _ = QFileDialog.getSaveFileName(
             self, "Save Steganographic Image", "",
-            "PNG files (*.png);;All files (*.*)"
+            "PNG files (*.png);;JPEG files (*.jpg);;BMP files (*.bmp);;TIFF files (*.tiff);;All files (*.*)"
         )
         
         if not output_path:
@@ -375,7 +517,9 @@ class ImageSteganographyTab(QWidget):
             'message': message,
             'output_path': output_path,
             'crypto': crypto,
-            'password': password
+            'password': password,
+            # 'strip_metadata': self.strip_metadata.isChecked(),  # Removed
+            'preserve_timestamps': self.preserve_timestamps.isChecked()
         })
     
     def extract_message(self):
@@ -426,12 +570,47 @@ class ImageSteganographyTab(QWidget):
                 # Show extracted message in red formatting
                 extracted_msg = message[18:].strip()  # Remove "Extracted message: " prefix
                 self.results_text.append(f'<span style="color: #dc3545; font-weight: bold;">🔍 EXTRACTED MESSAGE: {extracted_msg}</span>')
+            elif message.startswith("EMBED_SUCCESS:"):
+                # Show embedded message and load comparison
+                output_path = message[14:]  # Remove "EMBED_SUCCESS:" prefix
+                self.results_text.append(f'<span style="color: #28a745; font-weight: bold;">✓ Message embedded successfully!</span>')
+                self.load_stego_image_preview(output_path)
             else:
                 self.results_text.append(f'<span style="color: #28a745; font-weight: bold;">✓ {message}</span>')
         else:
             self.results_text.append(f'<span style="color: #dc3545; font-weight: bold;">✗ {message}</span>')
         
         self.worker_thread = None
+    
+    def clear_all(self):
+        """Clear all input fields and reset the interface."""
+        self.message_text.clear()
+        self.password_input.clear()
+        self.results_text.clear()
+        self.use_encryption.setChecked(False)
+        # self.strip_metadata.setChecked(True)  # Removed
+        self.preserve_timestamps.setChecked(True)
+        
+        # Clear image previews
+        self.before_image_label.clear()
+        self.before_image_label.setText("Original")
+        self.after_image_label.clear()
+        self.after_image_label.setText("Stego")
+        
+        # Clear metadata displays - removed (not working properly)
+        # self.before_metadata_text.clear()
+        # self.after_metadata_text.clear()
+        
+        # Reset image info
+        self.info_dimensions.setText("")
+        self.info_format.setText("")
+        self.info_metrics.setText("")
+        
+        # Reset image path
+        self.current_image_path = ""
+        
+        # Update status
+        self.results_text.append('<span style="color: #6c757d; font-style: italic;">Interface cleared</span>')
 
 
 class TextSteganographyTab(QWidget):
@@ -494,6 +673,17 @@ class TextSteganographyTab(QWidget):
         load_btn_layout.addWidget(load_cover_btn)
         load_btn_layout.addWidget(load_stego_btn)
         
+        # Method selection
+        method_group = QGroupBox("Steganography Method")
+        method_layout = QHBoxLayout()
+        self.method_combo = QComboBox()
+        self.method_combo.addItems(["Unicode (Invisible)", "Whitespace"])
+        self.method_combo.setToolTip("Choose the text steganography method")
+        method_layout.addWidget(QLabel("Method:"))
+        method_layout.addWidget(self.method_combo)
+        method_group.setLayout(method_layout)
+        cover_layout.addWidget(method_group)
+        
         cover_layout.addWidget(self.cover_text)
         cover_layout.addLayout(load_btn_layout)
         cover_group.setLayout(cover_layout)
@@ -509,9 +699,6 @@ class TextSteganographyTab(QWidget):
         # Options
         options_layout = QFormLayout()
         
-        self.method_combo = QComboBox()
-        self.method_combo.addItems(["Unicode", "Whitespace"])
-        
         self.use_encryption_text = QCheckBox("Use Encryption")
         self.use_encryption_text.stateChanged.connect(self.toggle_text_encryption)
         
@@ -520,7 +707,6 @@ class TextSteganographyTab(QWidget):
         self.password_text.setEnabled(False)
         self.password_text.setPlaceholderText("Enter encryption password")
         
-        options_layout.addRow("Method:", self.method_combo)
         options_layout.addRow("Encryption:", self.use_encryption_text)
         options_layout.addRow("Password:", self.password_text)
         
@@ -533,8 +719,13 @@ class TextSteganographyTab(QWidget):
         self.extract_text_btn = QPushButton("Extract from Text")
         self.extract_text_btn.clicked.connect(self.extract_from_text)
         
+        self.clear_all_btn = QPushButton("Clear All")
+        self.clear_all_btn.clicked.connect(self.clear_all_text)
+        self.clear_all_btn.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold;")
+        
         button_layout.addWidget(self.embed_text_btn)
         button_layout.addWidget(self.extract_text_btn)
+        button_layout.addWidget(self.clear_all_btn)
         
         secret_layout.addWidget(self.secret_text)
         secret_layout.addLayout(options_layout)
@@ -665,7 +856,11 @@ class TextSteganographyTab(QWidget):
             crypto.set_password(password)
         
         # Get selected method
-        method = "unicode" if self.method_combo.currentText() == "Unicode" else "whitespace"
+        method_map = {
+            "Unicode (Invisible)": "unicode",
+            "Whitespace": "whitespace"
+        }
+        method = method_map.get(self.method_combo.currentText(), "unicode")
         
         # Start background operation
         self.start_text_operation("embed_text", {
@@ -697,7 +892,11 @@ class TextSteganographyTab(QWidget):
             crypto.set_password(password)
         
         # Get selected method
-        method = "unicode" if self.method_combo.currentText() == "Unicode" else "whitespace"
+        method_map = {
+            "Unicode (Invisible)": "unicode",
+            "Whitespace": "whitespace"
+        }
+        method = method_map.get(self.method_combo.currentText(), "unicode")
         
         # Start background operation
         self.start_text_operation("extract_text", {
@@ -798,7 +997,404 @@ class TextSteganographyTab(QWidget):
     def clear_output(self):
         """Clear output text."""
         self.output_text.clear()
+    
+    def clear_all_text(self):
+        """Clear all text steganography input fields and reset the interface."""
+        self.cover_text.clear()
+        self.secret_text.clear()
+        self.password_text.clear()
+        self.output_text.clear()
+        self.results_display.clear()
+        self.use_encryption_text.setChecked(False)
+        self.method_combo.setCurrentIndex(0)
+        
+        # Update status
+        self.results_display.append('<span style="color: #6c757d; font-style: italic;">Text interface cleared</span>')
 
+    # Removed duplicate clear_output method
+
+
+class FileSteganographyTab(QWidget):
+    """Tab for file steganography operations."""
+    
+    def __init__(self, crypto_manager: CryptoManager):
+        super().__init__()
+        self.crypto_manager = crypto_manager
+        self.current_file_path = ""
+        self.worker_thread = None
+        self.init_ui()
+    
+    def init_ui(self):
+        """Initialize the UI for file steganography."""
+        layout = QVBoxLayout()
+        
+        # Main splitter
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        
+        # Left panel - controls
+        left_panel = self._create_left_panel()
+        splitter.addWidget(left_panel)
+        
+        # Right panel - results and integrity check
+        right_panel = self._create_right_panel()
+        splitter.addWidget(right_panel)
+        
+        # Set initial splitter sizes
+        splitter.setSizes([400, 600])
+        
+        layout.addWidget(splitter)
+        
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setVisible(False)
+        layout.addWidget(self.progress_bar)
+        
+        self.setLayout(layout)
+    
+    def _create_left_panel(self) -> QWidget:
+        """Create the left control panel."""
+        widget = QWidget()
+        layout = QVBoxLayout()
+        
+        # File selection
+        file_group = QGroupBox("File Selection")
+        file_layout = QFormLayout()
+        
+        self.file_path_label = QLabel("No file selected")
+        self.file_path_label.setWordWrap(True)
+        
+        select_btn = QPushButton("Select File")
+        select_btn.clicked.connect(self.select_file)
+        
+        file_layout.addRow("Current File:", self.file_path_label)
+        file_layout.addRow("", select_btn)
+        file_group.setLayout(file_layout)
+        
+        # Message input
+        message_group = QGroupBox("Message")
+        message_layout = QVBoxLayout()
+        
+        self.message_text = QTextEdit()
+        self.message_text.setMaximumHeight(150)
+        self.message_text.setPlaceholderText("Enter your secret message here...")
+        
+        message_layout.addWidget(self.message_text)
+        message_group.setLayout(message_layout)
+        
+        # Options
+        options_group = QGroupBox("Options")
+        options_layout = QFormLayout()
+        
+        self.use_encryption = QCheckBox("Use Encryption")
+        self.use_encryption.stateChanged.connect(self.toggle_encryption)
+        
+        self.password_input = QLineEdit()
+        self.password_input.setEchoMode(QLineEdit.Password)
+        self.password_input.setEnabled(False)
+        self.password_input.setPlaceholderText("Enter encryption password")
+        
+        options_layout.addRow("Encryption:", self.use_encryption)
+        options_layout.addRow("Password:", self.password_input)
+        options_group.setLayout(options_layout)
+        
+        # Embed/Extract buttons
+        button_group = QGroupBox("Operations")
+        button_layout = QVBoxLayout()
+        
+        self.embed_btn = QPushButton("Embed Message")
+        self.embed_btn.clicked.connect(self.embed_message)
+        
+        self.extract_btn = QPushButton("Extract Message")
+        self.extract_btn.clicked.connect(self.extract_message)
+        
+        button_layout.addWidget(self.embed_btn)
+        button_layout.addWidget(self.extract_btn)
+        button_group.setLayout(button_layout)
+        
+        # Clear button
+        clear_btn = QPushButton("Clear All")
+        clear_btn.clicked.connect(self.clear_all)
+        clear_btn.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold;")
+        
+        # Add groups to layout
+        layout.addWidget(file_group)
+        layout.addWidget(message_group)
+        layout.addWidget(options_group)
+        layout.addWidget(button_group)
+        layout.addWidget(clear_btn)
+        layout.addStretch()
+        
+        widget.setLayout(layout)
+        return widget
+    
+    def _create_right_panel(self) -> QWidget:
+        """Create the right results panel."""
+        widget = QWidget()
+        layout = QVBoxLayout()
+        
+        # Results display
+        results_group = QGroupBox("Results")
+        results_layout = QVBoxLayout()
+        
+        self.results_display = QTextEdit()
+        self.results_display.setReadOnly(True)
+        self.results_display.setMaximumHeight(200)
+        
+        results_layout.addWidget(self.results_display)
+        results_group.setLayout(results_layout)
+        
+        # File integrity check section
+        integrity_group = QGroupBox("File Integrity Check")
+        integrity_layout = QVBoxLayout()
+        
+        # File selection for integrity check
+        file_select_layout = QHBoxLayout()
+        
+        self.original_file_label = QLabel("No original file selected")
+        self.original_file_label.setWordWrap(True)
+        select_original_btn = QPushButton("Select Original")
+        select_original_btn.clicked.connect(self.select_original_file)
+        
+        file_select_layout.addWidget(QLabel("Original:"))
+        file_select_layout.addWidget(self.original_file_label)
+        file_select_layout.addWidget(select_original_btn)
+        
+        file_select_layout2 = QHBoxLayout()
+        
+        self.modified_file_label = QLabel("No modified file selected")
+        self.modified_file_label.setWordWrap(True)
+        select_modified_btn = QPushButton("Select Modified")
+        select_modified_btn.clicked.connect(self.select_modified_file)
+        
+        file_select_layout2.addWidget(QLabel("Modified:"))
+        file_select_layout2.addWidget(self.modified_file_label)
+        file_select_layout2.addWidget(select_modified_btn)
+        
+        check_integrity_btn = QPushButton("Check Integrity")
+        check_integrity_btn.clicked.connect(self.check_integrity)
+        
+        self.integrity_results = QTextEdit()
+        self.integrity_results.setReadOnly(True)
+        self.integrity_results.setMaximumHeight(200)
+        
+        integrity_layout.addLayout(file_select_layout)
+        integrity_layout.addLayout(file_select_layout2)
+        integrity_layout.addWidget(check_integrity_btn)
+        integrity_layout.addWidget(self.integrity_results)
+        integrity_group.setLayout(integrity_layout)
+        
+        # File information section
+        info_group = QGroupBox("File Information")
+        info_layout = QVBoxLayout()
+        
+        self.file_info_display = QTextEdit()
+        self.file_info_display.setReadOnly(True)
+        self.file_info_display.setMaximumHeight(150)
+        
+        info_layout.addWidget(self.file_info_display)
+        info_group.setLayout(info_layout)
+        
+        layout.addWidget(results_group)
+        layout.addWidget(integrity_group)
+        layout.addWidget(info_group)
+        
+        widget.setLayout(layout)
+        return widget
+    
+    def select_file(self):
+        """Select a file for steganography."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select File", "",
+            "All Supported (*.pdf *.docx *.xlsx *.pptx *.zip);;PDF files (*.pdf);;Word documents (*.docx);;Excel files (*.xlsx);;PowerPoint files (*.pptx);;ZIP files (*.zip);;All files (*.*)"
+        )
+        
+        if file_path:
+            self.current_file_path = file_path
+            self.file_path_label.setText(file_path)
+            self.update_file_info()
+    
+    def select_original_file(self):
+        """Select original file for integrity check."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Original File", "",
+            "All files (*.*)"
+        )
+        
+        if file_path:
+            self.original_file_path = file_path
+            self.original_file_label.setText(file_path)
+    
+    def select_modified_file(self):
+        """Select modified file for integrity check."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Modified File", "",
+            "All files (*.*)"
+        )
+        
+        if file_path:
+            self.modified_file_path = file_path
+            self.modified_file_label.setText(file_path)
+    
+    def update_file_info(self):
+        """Update file information display."""
+        if not self.current_file_path:
+            return
+        
+        try:
+            from src.core.file_stego import FileSteganography
+            file_stego = FileSteganography()
+            info = file_stego.get_file_info(self.current_file_path)
+            
+            info_text = f"""
+<b>File Information:</b><br>
+<b>Name:</b> {info.get('name', 'Unknown')}<br>
+<b>Format:</b> {info.get('format', 'Unknown')}<br>
+<b>Size:</b> {info.get('size', 0):,} bytes<br>
+<b>Supported:</b> {'Yes' if info.get('is_supported', False) else 'No'}<br>
+<b>Hash:</b> {info.get('hash', 'Unknown')[:16]}...<br>
+<b>Modified:</b> {info.get('modification_time', 0)}<br>
+            """
+            
+            self.file_info_display.setHtml(info_text)
+            
+        except Exception as e:
+            self.file_info_display.setPlainText(f"Error getting file info: {str(e)}")
+    
+    def toggle_encryption(self, state):
+        """Toggle encryption password input."""
+        self.password_input.setEnabled(state == Qt.CheckState.Checked)
+        if state != Qt.CheckState.Checked:
+            self.password_input.clear()
+    
+    def embed_message(self):
+        """Embed message in the selected file."""
+        if not self.current_file_path:
+            QMessageBox.warning(self, "Warning", "Please select a file first.")
+            return
+        
+        message = self.message_text.toPlainText().strip()
+        if not message:
+            QMessageBox.warning(self, "Warning", "Please enter a message to embed.")
+            return
+        
+        output_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Steganographic File", "",
+            "All files (*.*)"
+        )
+        
+        if not output_path:
+            return
+        
+        password = None
+        if self.use_encryption.isChecked():
+            password = self.password_input.text()
+            if not password:
+                QMessageBox.warning(self, "Warning", "Please enter a password for encryption.")
+                return
+        
+        self.start_operation("embed_file", {
+            'cover_path': self.current_file_path,
+            'payload': message,
+            'output_path': output_path,
+            'password': password
+        })
+    
+    def extract_message(self):
+        """Extract message from the selected file."""
+        if not self.current_file_path:
+            QMessageBox.warning(self, "Warning", "Please select a file first.")
+            return
+        
+        password = None
+        if self.use_encryption.isChecked():
+            password = self.password_input.text()
+            if not password:
+                QMessageBox.warning(self, "Warning", "Please enter a password for decryption.")
+                return
+        
+        self.start_operation("extract_file", {
+            'file_path': self.current_file_path,
+            'password': password
+        })
+    
+    def check_integrity(self):
+        """Check file integrity between original and modified files."""
+        if not hasattr(self, 'original_file_path') or not hasattr(self, 'modified_file_path'):
+            QMessageBox.warning(self, "Warning", "Please select both original and modified files.")
+            return
+        
+        self.start_operation("check_integrity", {
+            'original_path': self.original_file_path,
+            'modified_path': self.modified_file_path
+        })
+    
+    def clear_all(self):
+        """Clear all inputs and outputs."""
+        self.current_file_path = ""
+        self.file_path_label.setText("No file selected")
+        self.message_text.clear()
+        self.results_display.clear()
+        self.file_info_display.clear()
+        self.integrity_results.clear()
+        self.use_encryption.setChecked(False)
+        self.password_input.clear()
+        
+        if hasattr(self, 'original_file_path'):
+            delattr(self, 'original_file_path')
+        if hasattr(self, 'modified_file_path'):
+            delattr(self, 'modified_file_path')
+        
+        self.original_file_label.setText("No original file selected")
+        self.modified_file_label.setText("No modified file selected")
+    
+    def start_operation(self, operation: str, kwargs: dict):
+        """Start a background file steganography operation."""
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setRange(0, 0)  # Indeterminate progress
+        
+        self.embed_btn.setEnabled(False)
+        self.extract_btn.setEnabled(False)
+        
+        self.worker_thread = WorkerThread(operation, **kwargs)
+        self.worker_thread.finished.connect(self.operation_finished)
+        self.worker_thread.start()
+    
+    def operation_finished(self, success: bool, message: str):
+        """Handle completion of background operation."""
+        self.progress_bar.setVisible(False)
+        self.embed_btn.setEnabled(True)
+        self.extract_btn.setEnabled(True)
+        
+        if success:
+            if message.startswith("INTEGRITY_CHECK:"):
+                # Handle integrity check results
+                import ast
+                try:
+                    data_str = message[16:]  # Remove "INTEGRITY_CHECK:" prefix
+                    data = ast.literal_eval(data_str)
+                    
+                    integrity_html = f"""
+<b>File Integrity Check Results:</b><br>
+<b>Size Changed:</b> <span style="color: {'red' if data['size_changed'] else 'green'}">{'Yes' if data['size_changed'] else 'No'}</span><br>
+<b>Hash Changed:</b> <span style="color: {'red' if data['hash_changed'] else 'green'}">{'Yes' if data['hash_changed'] else 'No'}</span><br>
+<b>Modification Time Changed:</b> <span style="color: {'red' if data['modification_time_changed'] else 'green'}">{'Yes' if data['modification_time_changed'] else 'No'}</span><br>
+<b>Likely Modified:</b> <span style="color: {'red' if data['likely_modified'] else 'green'}">{'Yes' if data['likely_modified'] else 'No'}</span><br>
+<br>
+<b>Original Size:</b> {data['original_size']:,} bytes<br>
+<b>Modified Size:</b> {data['modified_size']:,} bytes<br>
+<b>Original Hash:</b> {data['original_hash']}<br>
+<b>Modified Hash:</b> {data['modified_hash']}<br>
+                    """
+                    
+                    self.integrity_results.setHtml(integrity_html)
+                except Exception as e:
+                    self.integrity_results.setPlainText(f"Error parsing integrity results: {str(e)}")
+            else:
+                self.results_display.append(f'<span style="color: #28a745; font-weight: bold;">✓ {message}</span>')
+        else:
+            self.results_display.append(f'<span style="color: #dc3545; font-weight: bold;">✗ {message}</span>')
+        
+        self.worker_thread = None
 
 class MainWindow(QMainWindow):
     """Main application window."""
@@ -840,6 +1436,10 @@ class MainWindow(QMainWindow):
         # Text steganography tab
         self.text_tab = TextSteganographyTab(self.crypto_manager)
         self.tab_widget.addTab(self.text_tab, "Text Steganography")
+        
+        # File steganography tab
+        self.file_tab = FileSteganographyTab(self.crypto_manager)
+        self.tab_widget.addTab(self.file_tab, "File Steganography")
         
         # Add to layout
         layout.addWidget(title_label)

@@ -4,6 +4,7 @@ Text steganography module using Unicode and whitespace techniques
 
 import re
 import base64
+import zlib
 from typing import Optional, Dict, Any, Union
 from . import SteganographyBase
 
@@ -27,7 +28,7 @@ class TextSteganography(SteganographyBase):
             '0': ' ',       # Single space
             '1': '\t',      # Tab character
         }
-    
+
     def embed_unicode(self, cover_text: str, payload: Union[str, bytes], 
                      password: Optional[str] = None) -> str:
         """
@@ -48,7 +49,10 @@ class TextSteganography(SteganographyBase):
                 
             salt = None
             if password and not self.crypto_manager:
-                from ..utils.crypto import CryptoManager
+                try:
+                    from utils.crypto import CryptoManager
+                except ImportError:
+                    from ..utils.crypto import CryptoManager
                 crypto = CryptoManager()
                 salt = crypto.set_password(password)
                 encrypted_payload = crypto.encrypt(payload)
@@ -147,20 +151,64 @@ class TextSteganography(SteganographyBase):
             
             # Decrypt if needed
             if password and not self.crypto_manager:
-                from ..utils.crypto import CryptoManager
+                try:
+                    from utils.crypto import CryptoManager
+                except ImportError:
+                    from ..utils.crypto import CryptoManager
                 if len(payload) >= 16:  # Salt is 16 bytes
                     salt = payload[:16]
                     encrypted_data = payload[16:]
                     crypto = CryptoManager()
                     crypto.set_password(password, salt)
-                    payload = crypto.decrypt(encrypted_data)
+                    try:
+                        payload = crypto.decrypt(encrypted_data)
+                    except Exception as e:
+                        self.logger.error(f"Decryption failed: {e}")
+                        raise ValueError("Invalid password or corrupted data")
                 else:
+                    # Check if data looks encrypted but no proper encryption format
+                    if len(payload) > 20:
+                        payload_str = payload.decode('utf-8', errors='ignore')
+                        if payload_str.startswith(('gAAAAA', 'gAAAAAB')):
+                            raise ValueError("Data appears to be encrypted but no password provided")
                     return None
             elif self.crypto_manager and self.crypto_manager.is_key_set():
-                payload = self.crypto_manager.decrypt(payload)
+                try:
+                    payload = self.crypto_manager.decrypt(payload)
+                except Exception as e:
+                    self.logger.error(f"Decryption failed: {e}")
+                    raise ValueError("Invalid password or corrupted data")
             
-            return payload.decode('utf-8')
+            # Check if we have encrypted data but no password
+            if not password and not (self.crypto_manager and self.crypto_manager.is_key_set()):
+                try:
+                    # Try to detect if payload looks like encrypted base64 data
+                    if len(payload) > 20:
+                        # Check if it's base64-like encrypted data
+                        try:
+                            test_decode = payload.decode('utf-8')
+                            if test_decode.startswith(('gAAAAA', 'gAAAAAB')) and len(test_decode) > 40:
+                                raise ValueError("Data appears to be encrypted but no password provided")
+                        except UnicodeDecodeError:
+                            pass
+                except:
+                    pass
             
+            try:
+                return payload.decode('utf-8')
+            except UnicodeDecodeError:
+                # If UTF-8 decode fails, it might be encrypted data
+                if not password and not (self.crypto_manager and self.crypto_manager.is_key_set()):
+                    raise ValueError("Data appears to be encrypted but no password provided")
+                else:
+                    raise ValueError("Invalid password or corrupted data")
+            
+        except ValueError as e:
+            # Re-raise password-related errors
+            if "Invalid password" in str(e) or "encrypted but no password" in str(e):
+                raise e
+            self.logger.error(f"Unicode extraction failed: {e}")
+            return None
         except Exception as e:
             self.logger.error(f"Unicode extraction failed: {e}")
             return None
@@ -185,7 +233,10 @@ class TextSteganography(SteganographyBase):
                 
             salt = None
             if password and not self.crypto_manager:
-                from ..utils.crypto import CryptoManager
+                try:
+                    from utils.crypto import CryptoManager
+                except ImportError:
+                    from ..utils.crypto import CryptoManager
                 crypto = CryptoManager()
                 salt = crypto.set_password(password)
                 encrypted_payload = crypto.encrypt(payload)
@@ -283,49 +334,87 @@ class TextSteganography(SteganographyBase):
             
             payload = base64.b64decode(b64_payload.encode('ascii'))
             
+            # Decrypt if needed
             if password and not self.crypto_manager:
-                from ..utils.crypto import CryptoManager
+                try:
+                    from utils.crypto import CryptoManager
+                except ImportError:
+                    from ..utils.crypto import CryptoManager
                 if len(payload) >= 16:  # Salt is 16 bytes
                     salt = payload[:16]
                     encrypted_data = payload[16:]
                     crypto = CryptoManager()
                     crypto.set_password(password, salt)
-                    payload = crypto.decrypt(encrypted_data)
+                    try:
+                        payload = crypto.decrypt(encrypted_data)
+                    except Exception as e:
+                        self.logger.error(f"Decryption failed: {e}")
+                        raise ValueError("Invalid password or corrupted data")
                 else:
+                    # Check if data looks encrypted but no proper encryption format
+                    if len(payload) > 20:
+                        payload_str = payload.decode('utf-8', errors='ignore')
+                        if payload_str.startswith(('gAAAAA', 'gAAAAAB')):
+                            raise ValueError("Data appears to be encrypted but no password provided")
                     return None
             elif self.crypto_manager and self.crypto_manager.is_key_set():
-                payload = self.crypto_manager.decrypt(payload)
+                try:
+                    payload = self.crypto_manager.decrypt(payload)
+                except Exception as e:
+                    self.logger.error(f"Decryption failed: {e}")
+                    raise ValueError("Invalid password or corrupted data")
+            
+            # Check if we have encrypted data but no password
+            if not password and not (self.crypto_manager and self.crypto_manager.is_key_set()):
+                try:
+                    payload_str = payload.decode('utf-8', errors='ignore')
+                    if len(payload_str) > 20 and payload_str.startswith(('gAAAAA', 'gAAAAAB')):
+                        raise ValueError("Data appears to be encrypted but no password provided")
+                except:
+                    pass
             
             return payload.decode('utf-8')
             
+        except ValueError as e:
+            # Re-raise password-related errors
+            if "Invalid password" in str(e) or "encrypted but no password" in str(e):
+                raise e
+            self.logger.error(f"Whitespace extraction failed: {e}")
+            return None
         except Exception as e:
             self.logger.error(f"Whitespace extraction failed: {e}")
             return None
-    
+
     def embed(self, cover_data: str, payload: Union[str, bytes], 
               method: str = 'unicode', **kwargs) -> str:
         """Unified embed method"""
         if method == 'unicode':
             return self.embed_unicode(cover_data, payload, **kwargs)
-        else:
+        elif method == 'whitespace':
             return self.embed_whitespace(cover_data, payload, **kwargs)
-    
+        else:
+            raise ValueError(f"Unknown method: {method}")
+
     def extract(self, stego_data: str, method: str = 'unicode', **kwargs) -> Optional[str]:
         """Unified extract method"""
         if method == 'unicode':
             return self.extract_unicode(stego_data, **kwargs)
-        else:
+        elif method == 'whitespace':
             return self.extract_whitespace(stego_data, **kwargs)
-    
+        else:
+            raise ValueError(f"Unknown method: {method}")
+
     def get_capacity(self, cover_data: str, method: str = 'unicode', **kwargs) -> int:
         """Calculate capacity for text steganography"""
         if method == 'unicode':
             sentences = len(re.split(r'[.!?]\s+', cover_data))
             return sentences * 16 // 8  # 16 bits per sentence, convert to bytes
-        else:
+        elif method == 'whitespace':
             lines = len(cover_data.split('\n'))
             return lines * 8 // 8  # 8 bits per line, convert to bytes
-    
+        else:
+            return 0
+
     def analyze_text(self, text: str) -> Dict[str, Any]:
         """Analyze text for steganographic potential"""
         try:

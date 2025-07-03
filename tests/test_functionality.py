@@ -7,10 +7,10 @@ import sys
 from pathlib import Path
 
 # Add src directory to Python path
-src_path = Path(__file__).parent / 'src'
+src_path = Path(__file__).parent.parent / 'src'
 sys.path.insert(0, str(src_path))
 
-from src.core.text_stego import TextSteganography
+from core.text_stego import TextSteganography
 
 def test_unicode_without_password():
     """Test unicode method without password"""

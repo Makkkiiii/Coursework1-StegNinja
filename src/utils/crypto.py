@@ -24,13 +24,16 @@ class CryptoManager:
         
         Args:
             password: The password string
-            salt: Optional salt bytes. If None, generates random salt
+            salt: Optional salt bytes. If None, generates deterministic salt from password
             
         Returns:
             The salt used for key derivation
         """
         if salt is None:
-            salt = os.urandom(16)
+            # Generate deterministic salt from password for consistent encryption/decryption
+            salt = hashes.Hash(hashes.SHA256())
+            salt.update(password.encode('utf-8'))
+            salt = salt.finalize()[:16]  # Use first 16 bytes as salt
         
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
