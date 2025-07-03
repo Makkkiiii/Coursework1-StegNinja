@@ -36,7 +36,7 @@
 
 **Programming and Algorithm 2 (Python) - Lecturer: Suman Shrestha**
 
-**Telechat - 26th June (3rd Semester)**
+**StegNinja - 26th June (3rd Semester)**
 
 </div>
 
