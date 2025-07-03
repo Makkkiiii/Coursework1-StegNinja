@@ -407,32 +407,8 @@ class TextSteganography(SteganographyBase):
     def get_capacity(self, cover_data: str, method: str = 'unicode', **kwargs) -> int:
         """Calculate capacity for text steganography"""
         if method == 'unicode':
-            sentences = len(re.split(r'[.!?]\s+', cover_data))
-            return sentences * 16 // 8  # 16 bits per sentence, convert to bytes
+            return len(re.split(r'[.!?]\s+', cover_data)) * 2  # 16 bits per sentence -> 2 bytes
         elif method == 'whitespace':
-            lines = len(cover_data.split('\n'))
-            return lines * 8 // 8  # 8 bits per line, convert to bytes
+            return len(cover_data.split('\n'))  # 8 bits per line -> 1 byte
         else:
             return 0
-
-    def analyze_text(self, text: str) -> Dict[str, Any]:
-        """Analyze text for steganographic potential"""
-        try:
-            sentences = len(re.split(r'[.!?]\s+', text))
-            lines = len(text.split('\n'))
-            words = len(text.split())
-            chars = len(text)
-            
-            return {
-                'characters': chars,
-                'words': words, 
-                'sentences': sentences,
-                'lines': lines,
-                'unicode_capacity': self.get_capacity(text, 'unicode'),
-                'whitespace_capacity': self.get_capacity(text, 'whitespace'),
-                'has_zw_chars': any(char in self.char_to_bit for char in text),
-                'has_trailing_ws': any(line != line.rstrip() for line in text.split('\n'))
-            }
-        except Exception as e:
-            self.logger.error(f"Text analysis failed: {e}")
-            return {}

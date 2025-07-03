@@ -31,20 +31,20 @@ class CryptoManager:
         """
         if salt is None:
             # Generate deterministic salt from password for consistent encryption/decryption
-            salt = hashes.Hash(hashes.SHA256())
-            salt.update(password.encode('utf-8'))
-            salt = salt.finalize()[:16]  # Use first 16 bytes as salt
+            salt = hashes.Hash(hashes.SHA256()) # type: ignore
+            salt.update(password.encode('utf-8')) # type: ignore
+            salt = salt.finalize()[:16]  # type: ignore # Use first 16 bytes as salt
         
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
-            salt=salt,
+            salt=salt, # type: ignore
             iterations=100000,
         )
         key = base64.urlsafe_b64encode(kdf.derive(password.encode()))
         self._key = key
         self._fernet = Fernet(key)
-        return salt
+        return salt # type: ignore
     
     def encrypt(self, data: bytes) -> bytes:
         """

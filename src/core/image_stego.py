@@ -242,50 +242,25 @@ class ImageSteganography(SteganographyBase):
     
     def extract_text(self, stego_path: str, bits_per_channel: int = 1,
                      password: Optional[str] = None) -> Optional[str]:
-        """
-        Extract text data using LSB method.
-        
-        Args:
-            stego_path: Path to steganographic image
-            bits_per_channel: Number of LSB bits used
-            password: Decryption password
-            
-        Returns:
-            Extracted text or None if failed
-        """
+        """Extract text data using LSB method."""
         try:
             data = self.extract(stego_path, bits_per_channel, password)
             if data:
-                # Try to decode as UTF-8
                 try:
                     decoded_text = data.decode('utf-8')
-                    # Check if decoded text looks like encrypted data (Fernet tokens)
+                    # Check if decoded text looks like encrypted data
                     if (len(decoded_text) > 20 and 
                         decoded_text.startswith(('gAAAAA', 'gAAAAAB')) and
                         not password and not (hasattr(self, 'crypto_manager') and self.crypto_manager and self.crypto_manager.is_key_set())):
                         raise ValueError("Data appears to be encrypted but no password provided")
-                    
                     return decoded_text
                 except UnicodeDecodeError:
-                    # If UTF-8 decode fails, check if it looks like encrypted data
-                    try:
-                        data_str = data.decode('utf-8', errors='ignore')
-                        # Check if it looks like base64 encrypted data (Fernet tokens)
-                        if (len(data_str) > 20 and 
-                            data_str.startswith(('gAAAAA', 'gAAAAAB')) and
-                            not password and not (hasattr(self, 'crypto_manager') and self.crypto_manager and self.crypto_manager.is_key_set())):
-                            raise ValueError("Data appears to be encrypted but no password provided")
-                    except:
-                        pass
-                    
-                    # If we have a password but still failed, it's wrong password
                     if password or (hasattr(self, 'crypto_manager') and self.crypto_manager and self.crypto_manager.is_key_set()):
                         raise ValueError("Invalid password or corrupted data")
                     else:
                         raise ValueError("Extracted data is not valid text - may be corrupted or encrypted")
             return None
         except ValueError as e:
-            # Re-raise password-related errors
             if "Invalid password" in str(e) or "encrypted but no password" in str(e):
                 raise e
             self.logger.error(f"Text extraction failed: {e}")
@@ -297,8 +272,7 @@ class ImageSteganography(SteganographyBase):
     def get_capacity(self, cover_path: str, bits_per_channel: int = 1) -> int:
         """Calculate capacity for given image"""
         try:
-            image = Image.open(cover_path)
-            return self.get_capacity_for_image(image, bits_per_channel)
+            return self.get_capacity_for_image(Image.open(cover_path), bits_per_channel)
         except:
             return 0
     
@@ -356,107 +330,10 @@ class ImageSteganography(SteganographyBase):
             self.logger.error(f"Capacity analysis failed: {e}")
             return {'max_payload_size': 0, 'efficiency': 0}
     
-    def get_image_metadata(self, image_path: str) -> Dict[str, Any]:
-        """
-        Extract image metadata including EXIF data
-        
-        Args:
-            image_path: Path to the image file
-            
-        Returns:
-            Dictionary containing metadata information
-        """
-        try:
-            from PIL import Image
-            from PIL.ExifTags import TAGS
-            
-            # Get file stats
-            file_stat = os.stat(image_path)
-            
-            # Load image
-            image = Image.open(image_path)
-            
-            # Basic image info
-            metadata = {
-                'file_size': file_stat.st_size,
-                'file_size_mb': round(file_stat.st_size / (1024 * 1024), 2),
-                'dimensions': f"{image.width}x{image.height}",
-                'format': image.format,
-                'mode': image.mode,
-                'has_transparency': image.mode in ('RGBA', 'LA') or 'transparency' in image.info,
-                'creation_time': os.path.getctime(image_path),
-                'modification_time': os.path.getmtime(image_path),
-                'exif_data': {}
-            }
-            
-            # Extract EXIF data
-            try:
-                # Try modern method first
-                if hasattr(image, 'getexif'):
-                    exif_data = image.getexif()
-                    if exif_data is not None and len(exif_data) > 0:
-                        for tag_id, value in exif_data.items():
-                            tag = TAGS.get(tag_id, tag_id)
-                            if isinstance(value, bytes):
-                                try:
-                                    value = value.decode('utf-8')
-                                except:
-                                    value = str(value)
-                            metadata['exif_data'][str(tag)] = str(value)
-                    else:
-                        # Try alternative method for older PIL versions
-                        exif_dict = image._getexif()
-                        if exif_dict is not None:
-                            for tag_id, value in exif_dict.items():
-                                tag = TAGS.get(tag_id, tag_id)
-                                if isinstance(value, bytes):
-                                    try:
-                                        value = value.decode('utf-8')
-                                    except:
-                                        value = str(value)
-                                metadata['exif_data'][str(tag)] = str(value)
-            except Exception as e:
-                self.logger.debug(f"EXIF extraction failed: {e}")
-                # Try reading raw EXIF from image info
-                try:
-                    if 'exif' in image.info:
-                        from PIL.ExifTags import TAGS
-                        import struct
-                        # Basic EXIF parsing
-                        metadata['exif_data']['Raw EXIF'] = 'Present (parsing not supported)'
-                except:
-                    pass
-            
-            # Additional image info
-            if hasattr(image, 'info') and image.info:
-                metadata['additional_info'] = {}
-                for key, value in image.info.items():
-                    if key not in ['exif']:  # Skip raw exif data
-                        metadata['additional_info'][key] = str(value)
-            
-            return metadata
-            
-        except Exception as e:
-            self.logger.error(f"Failed to extract metadata: {e}")
-            return {
-                'file_size': 0,
-                'file_size_mb': 0,
-                'dimensions': '0x0',
-                'format': 'Unknown',
-                'mode': 'Unknown',
-                'has_transparency': False,
-                'creation_time': 0,
-                'modification_time': 0,
-                'exif_data': {},
-                'error': str(e)
-            }
-
     def strip_metadata(self, image: Image.Image):
         """Remove EXIF and other metadata from image for security"""
         try:
-            # Remove EXIF data
-            if hasattr(image, '_getexif') and image._getexif() is not None:
-                # Create new image without EXIF
+            if hasattr(image, '_getexif') and image._getexif() is not None: # type: ignore
                 data = list(image.getdata())
                 image_without_exif = Image.new(image.mode, image.size)
                 image_without_exif.putdata(data)
@@ -469,7 +346,6 @@ class ImageSteganography(SteganographyBase):
     def preserve_timestamps(self, source_path: str, target_path: str):
         """Preserve original file timestamps for stealth"""
         try:
-            import shutil
             source_stat = os.stat(source_path)
             os.utime(target_path, (source_stat.st_atime, source_stat.st_mtime))
         except Exception as e:
@@ -489,7 +365,7 @@ class ImageSteganography(SteganographyBase):
                 stego = cv2.resize(stego, (original.shape[1], original.shape[0]))
             
             # Calculate MSE
-            mse = np.mean((original - stego) ** 2)
+            mse = np.mean((original - stego) ** 2) # type: ignore
             
             # Calculate PSNR
             if mse == 0:
@@ -503,10 +379,10 @@ class ImageSteganography(SteganographyBase):
             stego_gray = cv2.cvtColor(stego, cv2.COLOR_BGR2GRAY)
             
             # Simple SSIM approximation
-            mean_orig = np.mean(original_gray)
-            mean_stego = np.mean(stego_gray)
-            var_orig = np.var(original_gray)
-            var_stego = np.var(stego_gray)
+            mean_orig = np.mean(original_gray) # type: ignore
+            mean_stego = np.mean(stego_gray) # type: ignore
+            var_orig = np.var(original_gray) # type: ignore
+            var_stego = np.var(stego_gray) # type: ignore
             covar = np.mean((original_gray - mean_orig) * (stego_gray - mean_stego))
             
             c1 = 0.01 ** 2
@@ -530,42 +406,17 @@ if __name__ == "__main__":
     print("🎯 ImageSteganography Module Test")
     print("=" * 40)
     
-    # Initialize the steganography module
     try:
         stego = ImageSteganography()
         print("✅ ImageSteganography module initialized successfully")
         print(f"📁 Supported formats: {stego.supported_formats}")
         
         # Test basic functionality
-        print("\n🔧 Testing basic functionality...")
-        
-        # Check if we can create a test image
-        try:
-            from PIL import Image
-            test_image = Image.new('RGB', (100, 100), color='red')
-            capacity = stego.get_capacity_for_image(test_image, 1)
-            print(f"📊 Test image capacity (100x100 RGB): {capacity} bits")
-            
-            # Test analysis
-            analysis = {
-                'width': 100,
-                'height': 100,
-                'channels': 3,
-                'format': 'RGB',
-                'mode': 'RGB',
-                'capacity_1bit': capacity,
-                'file_size': 30000  # estimated
-            }
-            print(f"🔍 Image analysis: {analysis}")
-            
-        except Exception as e:
-            print(f"❌ Test failed: {e}")
+        test_image = Image.new('RGB', (100, 100), color='red')
+        capacity = stego.get_capacity_for_image(test_image, 1)
+        print(f"📊 Test image capacity (100x100 RGB): {capacity} bits")
         
         print("\n✅ Module test completed successfully!")
-        print("💡 To use this module, import it in your main application:")
-        print("   from src.core.image_stego import ImageSteganography")
         
     except Exception as e:
         print(f"❌ Failed to initialize ImageSteganography: {e}")
-        import traceback
-        traceback.print_exc()

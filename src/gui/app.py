@@ -53,7 +53,7 @@ class WorkerThread(QThread):
             elif self.operation == "check_integrity":
                 self._check_integrity()
             elif self.operation == "analyze":
-                self._analyze()
+                self._analyze() # type: ignore
         except Exception as e:
             self.finished.emit(False, str(e))
     
@@ -400,7 +400,7 @@ class ImageSteganographyTab(QWidget):
         # Enable word wrap and set minimum height for multi-line quality display
         self.info_quality.setWordWrap(True)
         self.info_quality.setMinimumHeight(80)  # Enough for 4-5 lines
-        self.info_quality.setAlignment(Qt.AlignTop)  # Align to top
+        self.info_quality.setAlignment(Qt.AlignTop)  # type: ignore # Align to top
         basic_info_layout.addRow("Dimensions:", self.info_dimensions)
         basic_info_layout.addRow("Format:", self.info_format)
         basic_info_layout.addRow("Steganography Quality:", self.info_quality)

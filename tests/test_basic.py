@@ -15,6 +15,7 @@ sys.path.insert(0, project_root)
 
 from src.core.image_stego import ImageSteganography
 from src.core.text_stego import TextSteganography
+from src.core.file_stego import FileSteganography
 from src.utils.crypto import CryptoManager
 
 
@@ -75,13 +76,12 @@ class TestImageSteganography(unittest.TestCase):
         extracted = self.image_stego.extract_text(self.output_path, password=password)
         self.assertEqual(extracted, self.test_message, "Extracted encrypted message should match")
     
-    def test_capacity_analysis(self):
-        """Test capacity analysis functionality."""
-        analysis = self.image_stego.analyze_capacity(self.test_image_path)
+    def test_capacity_calculation(self):
+        """Test capacity calculation functionality."""
+        capacity = self.image_stego.get_capacity(self.test_image_path)
         
-        self.assertIn('max_payload_size', analysis)
-        self.assertIn('efficiency', analysis)
-        self.assertGreater(analysis['max_payload_size'], 0)
+        self.assertIsInstance(capacity, int)
+        self.assertGreater(capacity, 0)
 
 
 class TestTextSteganography(unittest.TestCase):
@@ -184,6 +184,128 @@ class TestCryptoManager(unittest.TestCase):
         self.assertEqual(decrypted2, self.test_data)
 
 
+class TestFileSteganography(unittest.TestCase):
+    """Test file steganography functionality."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.file_stego = FileSteganography()
+        self.test_message = "This is a test message for file steganography!"
+        
+        # Create a test PDF file (simple text file with PDF-like structure)
+        self.test_pdf_content = b"""%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+>>
+endobj
+xref
+0 4
+0000000000 65535 f 
+0000000009 00000 n 
+0000000074 00000 n 
+0000000120 00000 n 
+trailer
+<<
+/Size 4
+/Root 1 0 R
+>>
+startxref
+187
+%%EOF"""
+        
+        self.test_pdf_path = tempfile.mktemp(suffix='.pdf')
+        with open(self.test_pdf_path, 'wb') as f:
+            f.write(self.test_pdf_content)
+        
+        self.output_pdf_path = tempfile.mktemp(suffix='.pdf')
+    
+    def tearDown(self):
+        """Clean up test files."""
+        for path in [self.test_pdf_path, self.output_pdf_path]:
+            if os.path.exists(path):
+                os.remove(path)
+    
+    def test_embed_and_extract_pdf(self):
+        """Test basic embed and extract functionality with PDF."""
+        # Test embedding
+        result = self.file_stego.embed(
+            self.test_pdf_path,
+            self.test_message,
+            self.output_pdf_path
+        )
+        self.assertTrue(result, "PDF embedding should succeed")
+        self.assertTrue(os.path.exists(self.output_pdf_path), "Output PDF file should exist")
+        
+        # Test extraction
+        extracted = self.file_stego.extract_text(self.output_pdf_path)
+        self.assertEqual(extracted, self.test_message, "Extracted message should match original")
+    
+    def test_embed_with_encryption(self):
+        """Test embedding with encryption."""
+        password = "test_pdf_password_123"
+        
+        # Test embedding with password
+        result = self.file_stego.embed(
+            self.test_pdf_path,
+            self.test_message,
+            self.output_pdf_path,
+            password=password
+        )
+        self.assertTrue(result, "Encrypted PDF embedding should succeed")
+        
+        # Test extraction with correct password
+        extracted = self.file_stego.extract_text(self.output_pdf_path, password=password)
+        self.assertEqual(extracted, self.test_message, "Extracted encrypted message should match")
+    
+    def test_file_info(self):
+        """Test file information functionality."""
+        info = self.file_stego.get_file_info(self.test_pdf_path)
+        
+        self.assertIn('name', info)
+        self.assertIn('size', info)
+        self.assertIn('format', info)
+        self.assertIn('hash', info)
+        self.assertGreater(info['size'], 0)
+    
+    def test_integrity_check(self):
+        """Test file integrity check functionality."""
+        # Create a modified version
+        result = self.file_stego.embed(
+            self.test_pdf_path,
+            self.test_message,
+            self.output_pdf_path
+        )
+        self.assertTrue(result, "Embedding should succeed for integrity test")
+        
+        # Check integrity
+        integrity = self.file_stego.check_file_integrity(
+            self.test_pdf_path,
+            self.output_pdf_path
+        )
+        
+        self.assertIn('files_exist', integrity)
+        self.assertIn('hash_changed', integrity)
+        self.assertIn('likely_modified', integrity)
+        self.assertTrue(integrity['files_exist'])
+        self.assertTrue(integrity['hash_changed'])  # Should be changed after embedding
+
+
 if __name__ == '__main__':
     # Create a test suite using the modern approach
     loader = unittest.TestLoader()
@@ -193,6 +315,8 @@ if __name__ == '__main__':
     suite.addTest(loader.loadTestsFromTestCase(TestCryptoManager))
     suite.addTest(loader.loadTestsFromTestCase(TestImageSteganography))
     suite.addTest(loader.loadTestsFromTestCase(TestTextSteganography))
+    suite.addTest(loader.loadTestsFromTestCase(TestFileSteganography))
+    suite.addTest(loader.loadTestsFromTestCase(TestFileSteganography))
     
     # Run tests
     runner = unittest.TextTestRunner(verbosity=2)

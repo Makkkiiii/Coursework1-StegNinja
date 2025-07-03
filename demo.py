@@ -15,6 +15,7 @@ sys.path.insert(0, project_root)
 
 from src.core.image_stego import ImageSteganography
 from src.core.text_stego import TextSteganography
+from src.core.file_stego import FileSteganography
 from src.utils.crypto import CryptoManager
 
 
@@ -64,11 +65,11 @@ def demo_image_steganography():
             print(f"   Extracted encrypted message: {extracted}")
             print(f"   Match: {extracted == secret_message}")
         
-        # Analyze capacity
-        print("\n4. Capacity analysis...")
-        analysis = img_stego.analyze_capacity(temp_image)
-        print(f"   Max payload size: {analysis.get('max_payload_size', 0)} bits")
-        print(f"   Image dimensions: {analysis.get('dimensions', 'N/A')}")
+        # Check capacity
+        print("\n4. Capacity check...")
+        capacity = img_stego.get_capacity(temp_image)
+        print(f"   Estimated capacity: {capacity} bytes")
+        print(f"   Message length: {len(secret_message)} characters")
         
     finally:
         # Clean up
@@ -132,12 +133,13 @@ casual observation. Advanced detection requires specialized tools and analysis."
     print(f"   Encrypted extraction: {extracted_encrypted}")
     print(f"   Match: {extracted_encrypted == secret_message}")
     
-    # Analyze text capacity
-    print("\n4. Text capacity analysis...")
-    analysis = text_stego.analyze_text(cover_text)
-    print(f"   Sentences: {analysis.get('sentences', 0)}")
-    print(f"   Unicode capacity: {analysis.get('unicode_capacity', 0)} bytes")
-    print(f"   Whitespace capacity: {analysis.get('whitespace_capacity', 0)} bytes")
+    # Check text capacity
+    print("\n4. Text capacity check...")
+    unicode_capacity = text_stego.get_capacity(cover_text, method='unicode')
+    whitespace_capacity = text_stego.get_capacity(cover_multiline, method='whitespace')
+    print(f"   Unicode capacity: {unicode_capacity} bytes")
+    print(f"   Whitespace capacity: {whitespace_capacity} bytes")
+    print(f"   Message length: {len(secret_message)} characters")
 
 
 def demo_crypto_functionality():
@@ -178,6 +180,119 @@ def demo_crypto_functionality():
     print(f"   Match: {decrypted_string == test_string}")
 
 
+def demo_file_steganography():
+    """Demonstrate file steganography functionality."""
+    print("\n=== File Steganography Demo ===")
+    
+    # Create a sample PDF file
+    pdf_content = b"""%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+>>
+endobj
+xref
+0 4
+0000000000 65535 f 
+0000000009 00000 n 
+0000000074 00000 n 
+0000000120 00000 n 
+trailer
+<<
+/Size 4
+/Root 1 0 R
+>>
+startxref
+187
+%%EOF"""
+    
+    temp_pdf = tempfile.mktemp(suffix='.pdf')
+    temp_output = tempfile.mktemp(suffix='.pdf')
+    
+    with open(temp_pdf, 'wb') as f:
+        f.write(pdf_content)
+    
+    try:
+        # Initialize file steganography
+        file_stego = FileSteganography()
+        
+        # Test message
+        secret_message = "This is a secret message hidden in a PDF file!"
+        print(f"Original message: {secret_message}")
+        
+        # Get file info
+        print("\n1. File information...")
+        file_info = file_stego.get_file_info(temp_pdf)
+        print(f"   File name: {file_info.get('name', 'Unknown')}")
+        print(f"   File size: {file_info.get('size', 0)} bytes")
+        print(f"   File format: {file_info.get('format', 'Unknown')}")
+        print(f"   Supported: {file_info.get('is_supported', False)}")
+        
+        # Test capacity
+        print("\n2. Capacity check...")
+        capacity = file_stego.get_capacity(temp_pdf)
+        print(f"   Estimated capacity: {capacity} bytes")
+        print(f"   Message length: {len(secret_message)} characters")
+        
+        # Embed without encryption
+        print("\n3. Embedding message (no encryption)...")
+        success = file_stego.embed(temp_pdf, secret_message, temp_output)
+        print(f"   Embedding successful: {success}")
+        
+        if success:
+            # Extract without encryption
+            print("4. Extracting message (no encryption)...")
+            extracted = file_stego.extract_text(temp_output)
+            print(f"   Extracted message: {extracted}")
+            print(f"   Match: {extracted == secret_message}")
+            
+            # Check integrity
+            print("\n5. Integrity check...")
+            integrity = file_stego.check_file_integrity(temp_pdf, temp_output)
+            print(f"   Files exist: {integrity.get('files_exist', False)}")
+            print(f"   Hash changed: {integrity.get('hash_changed', False)}")
+            print(f"   Size changed: {integrity.get('size_changed', False)}")
+            print(f"   Likely modified: {integrity.get('likely_modified', False)}")
+        
+        # Test with encryption
+        print("\n6. Testing with encryption...")
+        password = "file_demo_password_123"
+        temp_encrypted = tempfile.mktemp(suffix='.pdf')
+        
+        success = file_stego.embed(temp_pdf, secret_message, temp_encrypted, password=password)
+        print(f"   Encrypted embedding successful: {success}")
+        
+        if success:
+            extracted = file_stego.extract_text(temp_encrypted, password=password)
+            print(f"   Extracted encrypted message: {extracted}")
+            print(f"   Match: {extracted == secret_message}")
+        
+        # Clean up encrypted file
+        if os.path.exists(temp_encrypted):
+            os.remove(temp_encrypted)
+    
+    finally:
+        # Clean up
+        for file_path in [temp_pdf, temp_output]:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+
 def main():
     """Run all demonstrations."""
     print("StegNinja - Advanced Steganography Toolkit - Demonstration")
@@ -187,6 +302,8 @@ def main():
         demo_crypto_functionality()
         demo_image_steganography()
         demo_text_steganography()
+        demo_file_steganography()
+        demo_file_steganography()
         
         print("\n" + "=" * 50)
         print("All demonstrations completed successfully!")

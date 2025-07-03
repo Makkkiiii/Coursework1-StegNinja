@@ -406,7 +406,7 @@ class FileSteganography(SteganographyBase):
         except Exception as e:
             self.logger.error(f"Failed to get file info for {file_path}: {e}")
             return {}
-    
+
     def get_capacity(self, cover_path: str, **kwargs) -> int:
         """
         Get capacity for file steganography
@@ -423,13 +423,14 @@ class FileSteganography(SteganographyBase):
             file_size = os.path.getsize(cover_path)
             
             if file_ext == '.pdf':
-                # PDF can hold relatively large amounts of data
                 return file_size // 100  # Conservative estimate
             elif file_ext in ['.docx', '.xlsx', '.pptx', '.zip']:
-                # ZIP-based formats can hold substantial data
                 return file_size // 50   # More generous estimate
             else:
                 return 0
         except Exception as e:
             self.logger.error(f"Failed to calculate capacity for {cover_path}: {e}")
             return 0
+
+
+
