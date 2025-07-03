@@ -22,26 +22,6 @@
   <img src="https://img.shields.io/badge/File%20Support-PDF%20%7C%20DOCX%20%7C%20Images-orange?style=for-the-badge&logo=file&logoColor=white" alt="File Support">
 </p>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge&logo=github-actions&logoColor=white" alt="Build">
-  <img src="https://img.shields.io/badge/Tests-13%2F13%20Passing-success?style=for-the-badge&logo=check&logoColor=white" alt="Tests">
-  <img src="https://img.shields.io/badge/Coverage-100%25-brightgreen?style=for-the-badge&logo=codecov&logoColor=white" alt="Coverage">
-</p>
-
-<!-- Activity Indicators -->
-<p align="center">
-  <img src="https://img.shields.io/badge/Status-Active-success?style=flat-square&logo=pulse&logoColor=white" alt="Status">
-  <img src="https://img.shields.io/badge/Maintained-Yes-brightgreen?style=flat-square&logo=heart&logoColor=white" alt="Maintained">
-  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square&logo=windows&logoColor=white" alt="Platform">
-</p>
-
-<!-- Stats and Metrics -->
-<p align="center">
-  <img src="https://img.shields.io/badge/Code%20Lines-2000%2B-blue?style=flat-square&logo=code&logoColor=white" alt="Lines of Code">
-  <img src="https://img.shields.io/badge/Commits-50%2B-blue?style=flat-square&logo=git&logoColor=white" alt="Commits">
-  <img src="https://img.shields.io/badge/Last%20Updated-2025-blue?style=flat-square&logo=calendar&logoColor=white" alt="Last Updated">
-</p>
-
 </div>
 
 ---
@@ -119,7 +99,6 @@
 
 <img src="https://img.shields.io/badge/Design-Modern%20UI-blueviolet?style=for-the-badge&logo=figma&logoColor=white" alt="Design">
 <img src="https://img.shields.io/badge/UX-Responsive-success?style=for-the-badge&logo=mobile&logoColor=white" alt="UX">
-<img src="https://img.shields.io/badge/Theme-Dark%20%7C%20Light-yellow?style=for-the-badge&logo=sun&logoColor=white" alt="Theme">
 
 </div>
 
@@ -272,12 +251,6 @@ print(f"Hidden data: {data}")
 
 ## 🧪 **Testing & Quality Assurance**
 
-<div align="center">
-<img src="https://img.shields.io/badge/Tests-13%2F13%20Passing-success?style=for-the-badge&logo=check&logoColor=white" alt="Tests">
-<img src="https://img.shields.io/badge/Coverage-100%25-brightgreen?style=for-the-badge&logo=codecov&logoColor=white" alt="Coverage">
-<img src="https://img.shields.io/badge/Quality-A%2B-brightgreen?style=for-the-badge&logo=codacy&logoColor=white" alt="Quality">
-</div>
-
 ```bash
 # Run all tests
 python -m pytest tests/ -v
@@ -412,70 +385,6 @@ crypto.set_encryption_mode('AES-256-GCM')  # Authenticated encryption
 
 ---
 
-## 🏆 **Awards & Recognition**
-
-<div align="center">
-<img src="https://img.shields.io/badge/🥇-Best%20Security%20Tool-gold?style=for-the-badge" alt="Award">
-<img src="https://img.shields.io/badge/⭐-5%20Star%20Rating-yellow?style=for-the-badge" alt="Rating">
-<img src="https://img.shields.io/badge/🎖️-Top%20Rated-success?style=for-the-badge" alt="Top Rated">
-</div>
-
----
-
-## 👥 **Community & Support**
-
-<div align="center">
-<img src="https://img.shields.io/badge/Community-Active-brightgreen?style=for-the-badge&logo=discord&logoColor=white" alt="Community">
-<img src="https://img.shields.io/badge/Support-24%2F7-blue?style=for-the-badge&logo=support&logoColor=white" alt="Support">
-<img src="https://img.shields.io/badge/Documentation-Complete-orange?style=for-the-badge&logo=book&logoColor=white" alt="Documentation">
-</div>
-
-### 🤝 **Get Involved**
-
-- 💬 **Discord**: Join our community server
-- 📧 **Email**: Contact the development team
-- 🐛 **Issues**: Report bugs and request features
-- 📖 **Wiki**: Contribute to documentation
-- 🔧 **Pull Requests**: Submit code improvements
-
----
-
-## 📈 **Development Roadmap**
-
-<div align="center">
-
-| **Phase**   | **Features**               | **Status**     |
-| ----------- | -------------------------- | -------------- |
-| **Phase 1** | Core steganography engines | ✅ Complete    |
-| **Phase 2** | Modern GUI interface       | ✅ Complete    |
-| **Phase 3** | Advanced encryption        | ✅ Complete    |
-| **Phase 4** | File format support        | ✅ Complete    |
-| **Phase 5** | Video steganography        | 🔄 In Progress |
-| **Phase 6** | Audio steganography        | 📅 Planned     |
-| **Phase 7** | Network protocols          | 📅 Planned     |
-| **Phase 8** | Mobile app                 | 🔮 Future      |
-
-</div>
-
----
-
-## 🎖️ **Contributors**
-
-<div align="center">
-<a href="https://github.com/yourusername/StegNinja/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=yourusername/StegNinja" alt="Contributors">
-</a>
-</div>
-
-### 🌟 **Hall of Fame**
-
-- **Lead Developer**: Your Name
-- **Security Consultant**: Security Expert
-- **UI/UX Designer**: Design Specialist
-- **Quality Assurance**: Test Engineer
-
----
-
 ## 📜 **License & Legal**
 
 <div align="center">
@@ -513,30 +422,12 @@ copies or substantial portions of the Software.
 
 ---
 
-## 📞 **Contact Information**
-
-<div align="center">
-<a href="mailto:contact@stegninja.com">
-  <img src="https://img.shields.io/badge/Email-contact%40stegninja.com-blue?style=for-the-badge&logo=gmail&logoColor=white" alt="Email">
-</a>
-<a href="https://twitter.com/stegninja">
-  <img src="https://img.shields.io/badge/Twitter-@stegninja-blue?style=for-the-badge&logo=twitter&logoColor=white" alt="Twitter">
-</a>
-<a href="https://linkedin.com/company/stegninja">
-  <img src="https://img.shields.io/badge/LinkedIn-StegNinja-blue?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn">
-</a>
-</div>
-
----
-
 <div align="center">
 
 <!-- Animated Footer -->
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:4ECDC4,100:FF6B6B&height=200&section=footer&text=Happy%20Hiding!&fontSize=50&fontAlignY=65&desc=Remember%20to%20use%20responsibly&descAlignY=85&descAlign=62&fontColor=FFFFFF&animation=fadeIn" />
 
 ### 🥷 **"In the shadows we trust, in plain sight we hide"**
-
-<img src="https://komarev.com/ghpvc/?username=stegninja&label=Profile%20views&color=0e75b6&style=flat" alt="Profile Views">
 
 **⭐ If you find StegNinja useful, please consider giving it a star! ⭐**
 
