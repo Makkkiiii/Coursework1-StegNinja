@@ -5,10 +5,6 @@
 <!-- Animated Banner -->
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:FF6B6B,100:4ECDC4&height=300&section=header&text=StegNinja&fontSize=90&fontAlignY=38&desc=Advanced%20Steganography%20Toolkit&descAlignY=51&descAlign=62&fontColor=FFFFFF&animation=fadeIn" />
 
-<!-- Animated Typing Effect -->
-
-<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=28&pause=1000&color=FF6B6B&background=FFFFFF00&center=true&vCenter=true&width=600&height=100&lines=Strike+from+the+shadows;Hide+in+plain+sight;Leave+no+trace;Professional+Red+Team+Tool" alt="Typing SVG" /></a>
-
 <!-- Comprehensive Badges -->
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.8+-blue.svg?style=for-the-badge&logo=python&logoColor=white" alt="Python">
@@ -28,7 +24,7 @@
 
 ## 🎯 **What is StegNinja?**
 
-> **StegNinja** is a cutting-edge, professional-grade steganography toolkit designed for security researchers, red team operators, and cybersecurity professionals. It provides advanced data hiding capabilities across multiple media types with military-grade encryption.
+> **StegNinja** is a cutting-edge steganography toolkit designed for security researchers, red team operators, and cybersecurity professionals. It provides advanced data hiding capabilities across multiple media types with encryption.
 
 <div align="center">
   <img src="https://user-images.githubusercontent.com/placeholder/demo.gif" alt="StegNinja Demo" width="80%">
@@ -124,7 +120,7 @@
 
 ```bash
 # 1️⃣ Clone the repository
-git clone https://github.com/yourusername/StegNinja.git
+git clone https://github.com/Makkkiiii/Coursework1-StegNinja.git
 cd StegNinja
 
 # 2️⃣ Install dependencies
@@ -378,47 +374,17 @@ crypto.set_encryption_mode('AES-256-GCM')  # Authenticated encryption
 
 ### ⚖️ **Compliance & Ethics**
 
-- **📜 MIT License**: Open source and transparent
 - **🎓 Educational Purpose**: Designed for learning and research
 - **🏢 Professional Use**: Suitable for authorized security testing
 - **⚠️ Responsible Disclosure**: Ethical use guidelines included
 
 ---
 
-## 📜 **License & Legal**
-
-<div align="center">
-<img src="https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge" alt="License">
-<img src="https://img.shields.io/badge/Legal-Compliant-green?style=for-the-badge&logo=scale&logoColor=white" alt="Legal">
-</div>
-
-```
-MIT License
-
-Copyright (c) 2025 StegNinja Development Team
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-```
-
----
-
 ## ⚠️ **Important Disclaimer**
-
-<div align="center">
-<img src="https://img.shields.io/badge/⚠️-Important-red?style=for-the-badge&logo=warning&logoColor=white" alt="Warning">
-</div>
 
 > **Educational & Research Purpose Only**
 >
-> StegNinja is designed for educational purposes, authorized security research, and legitimate penetration testing. Users are solely responsible for ensuring compliance with all applicable laws and regulations in their jurisdiction. The development team assumes no responsibility for misuse of this software.
+> StegNinja is designed for educational purposes, authorized security research, and legitimate penetration testing.
 
 ---
 
@@ -426,9 +392,5 @@ copies or substantial portions of the Software.
 
 <!-- Animated Footer -->
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:4ECDC4,100:FF6B6B&height=200&section=footer&text=Happy%20Hiding!&fontSize=50&fontAlignY=65&desc=Remember%20to%20use%20responsibly&descAlignY=85&descAlign=62&fontColor=FFFFFF&animation=fadeIn" />
-
-### 🥷 **"In the shadows we trust, in plain sight we hide"**
-
-**⭐ If you find StegNinja useful, please consider giving it a star! ⭐**
 
 </div>
