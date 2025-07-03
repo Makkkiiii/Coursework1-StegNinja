@@ -1,0 +1,1 @@
+This is a sample text for steganography testing. You can hide secret messages in this text using the StegNinja application. The text should be long enough to contain hidden data without being obvious.
