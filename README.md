@@ -3,37 +3,40 @@
 <div align="center">
 
 <!-- Animated Banner -->
-<img src="https://capsule-render.vercel.app/api?type=shark&color=gradient&customColorList=6,11,20&height=200&section=header&text=StegNinja&fontSize=60&fontColor=fff&animation=fadeIn&fontAlignY=55&desc=Advanced%20Steganography%20Toolkit&descAlignY=75&descSize=20" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:EEFF00,30:FF6B6B,60:4ECDC4,100:45B7D1&height=250&section=header&text=StegNinja&fontSize=70&fontColor=fff&animation=twinkling&fontAlignY=40&desc=Advanced%20Steganography%20Toolkit&descAlignY=65&descSize=22&rotate=2" />
 
 <!-- Animated Typing Effect -->
 
-<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=24&pause=1000&color=4F46E5&background=FFFFFF00&center=true&vCenter=true&width=600&height=80&lines=Strike+from+the+shadows;Hide+in+plain+sight;Leave+no+trace;Professional+Security+Tool" alt="Typing SVG" /></a>
+<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=24&pause=1000&color=4F46E5&background=FFFFFF00&center=true&vCenter=true&width=600&height=80&lines=Advanced+Steganography+Toolkit;Hide+Data+Securely;Professional+Security+Tool" alt="Typing SVG" /></a>
 
-<!-- Modern Badge Grid -->
-<table align="center">
-<tr>
-<td align="center">
-  <img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-</td>
-<td align="center">
-  <img src="https://img.shields.io/badge/PyQt5-GUI-41CD52?style=for-the-badge&logo=qt&logoColor=white" alt="PyQt5">
-</td>
-<td align="center">
-  <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License">
-</td>
-</tr>
-<tr>
-<td align="center">
-  <img src="https://img.shields.io/badge/Security-AES%20256-FF4B4B?style=for-the-badge&logo=shield&logoColor=white" alt="Security">
-</td>
-<td align="center">
-  <img src="https://img.shields.io/badge/Methods-LSB%20•%20Unicode%20•%20Whitespace-8B5CF6?style=for-the-badge&logo=eye&logoColor=white" alt="Methods">
-</td>
-<td align="center">
-  <img src="https://img.shields.io/badge/Files-PDF%20•%20DOCX%20•%20Images-F59E0B?style=for-the-badge&logo=file&logoColor=white" alt="File Support">
-</td>
-</tr>
-</table>
+<!-- Modern Round Badges -->
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=flat&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/PyQt5-GUI-41CD52?style=flat&logo=qt&logoColor=white" alt="PyQt5">
+  <img src="https://img.shields.io/badge/License-MIT-0066CC?style=flat&logo=opensourceinitiative&logoColor=white" alt="License">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Security-AES%20256-FF6B6B?style=flat&logo=shield&logoColor=white" alt="Security">
+  <img src="https://img.shields.io/badge/Methods-LSB%20•%20Unicode%20•%20Whitespace-8B5CF6?style=flat&logo=eye&logoColor=white" alt="Methods">
+  <img src="https://img.shields.io/badge/Files-PDF%20•%20DOCX%20•%20Images-F59E0B?style=flat&logo=file&logoColor=white" alt="File Support">
+</p>
+
+</div>
+
+---
+
+## 📚 **Overview**
+
+<div align="center">
+
+**Softwarica College of IT and E-Commerce**
+
+**"Coursework 1"**
+
+**Programming and Algorithm 2 (Python) - Lecturer: Suman Shrestha**
+
+**Telechat - 26th June (3rd Semester)**
 
 </div>
 
@@ -110,8 +113,8 @@
 
 ### 🌟 **Professional & Intuitive Design**
 
-<img src="https://img.shields.io/badge/Design-Modern%20UI-blueviolet?style=for-the-badge&logo=figma&logoColor=white" alt="Design">
-<img src="https://img.shields.io/badge/UX-Responsive-success?style=for-the-badge&logo=mobile&logoColor=white" alt="UX">
+<img src="https://img.shields.io/badge/Design-Modern%20UI-blueviolet?style=flat&logo=figma&logoColor=white" alt="Design">
+<img src="https://img.shields.io/badge/UX-Responsive-success?style=flat&logo=mobile&logoColor=white" alt="UX">
 
 </div>
 
@@ -128,9 +131,9 @@
 ### 📋 **Prerequisites**
 
 <div align="center">
-<img src="https://img.shields.io/badge/Python-3.8%2B-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-<img src="https://img.shields.io/badge/OS-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=for-the-badge&logo=windows&logoColor=white" alt="OS">
-<img src="https://img.shields.io/badge/RAM-4GB%2B-orange?style=for-the-badge&logo=memory&logoColor=white" alt="RAM">
+<img src="https://img.shields.io/badge/Python-3.8%2B-blue?style=flat&logo=python&logoColor=white" alt="Python">
+<img src="https://img.shields.io/badge/OS-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat&logo=windows&logoColor=white" alt="OS">
+<img src="https://img.shields.io/badge/RAM-4GB%2B-orange?style=flat&logo=memory&logoColor=white" alt="RAM">
 </div>
 
 ### 🔧 **Installation**
@@ -336,34 +339,34 @@ crypto.set_encryption_mode('AES-256-GCM')  # Authenticated encryption
 <table>
 <tr>
 <td align="center">
-<img src="https://img.shields.io/badge/🎯-Precision-blue?style=for-the-badge" alt="Precision">
+<img src="https://img.shields.io/badge/🎯-Precision-blue?style=flat" alt="Precision">
 <br><strong>Pixel-Perfect</strong>
 <br>Advanced LSB algorithms with minimal visual distortion
 </td>
 <td align="center">
-<img src="https://img.shields.io/badge/🔒-Security-red?style=for-the-badge" alt="Security">
+<img src="https://img.shields.io/badge/🔒-Security-red?style=flat" alt="Security">
 <br><strong>Military-Grade</strong>
 <br>AES-256 encryption with secure key derivation
 </td>
 <td align="center">
-<img src="https://img.shields.io/badge/⚡-Performance-yellow?style=for-the-badge" alt="Performance">
+<img src="https://img.shields.io/badge/⚡-Performance-yellow?style=flat" alt="Performance">
 <br><strong>Lightning Fast</strong>
 <br>Optimized algorithms for maximum speed
 </td>
 </tr>
 <tr>
 <td align="center">
-<img src="https://img.shields.io/badge/🎨-Interface-purple?style=for-the-badge" alt="Interface">
+<img src="https://img.shields.io/badge/🎨-Interface-purple?style=flat" alt="Interface">
 <br><strong>Intuitive Design</strong>
 <br>Professional GUI with modern aesthetics
 </td>
 <td align="center">
-<img src="https://img.shields.io/badge/🧪-Tested-green?style=for-the-badge" alt="Tested">
+<img src="https://img.shields.io/badge/🧪-Tested-green?style=flat" alt="Tested">
 <br><strong>Battle-Tested</strong>
 <br>Comprehensive test suite with 100% coverage
 </td>
 <td align="center">
-<img src="https://img.shields.io/badge/📚-Documented-orange?style=for-the-badge" alt="Documented">
+<img src="https://img.shields.io/badge/📚-Documented-orange?style=flat" alt="Documented">
 <br><strong>Well-Documented</strong>
 <br>Complete documentation and examples
 </td>
@@ -376,9 +379,9 @@ crypto.set_encryption_mode('AES-256-GCM')  # Authenticated encryption
 ## 🔐 **Security & Compliance**
 
 <div align="center">
-<img src="https://img.shields.io/badge/Encryption-AES%20256-red?style=for-the-badge&logo=shield&logoColor=white" alt="Encryption">
-<img src="https://img.shields.io/badge/Hash-SHA%20256-blue?style=for-the-badge&logo=key&logoColor=white" alt="Hash">
-<img src="https://img.shields.io/badge/Random-Cryptographic-green?style=for-the-badge&logo=random&logoColor=white" alt="Random">
+<img src="https://img.shields.io/badge/Encryption-AES%20256-red?style=flat&logo=shield&logoColor=white" alt="Encryption">
+<img src="https://img.shields.io/badge/Hash-SHA%20256-blue?style=flat&logo=key&logoColor=white" alt="Hash">
+<img src="https://img.shields.io/badge/Random-Cryptographic-green?style=flat&logo=random&logoColor=white" alt="Random">
 </div>
 
 ### 🛡️ **Security Features**
