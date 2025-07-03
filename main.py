@@ -3,8 +3,6 @@
 StegNinja - Advanced Steganography Toolkit
 Professional steganography tool for security research and red team operations
 
-Strike from the shadows. Hide in plain sight. Leave no trace.
-
 Author: Denish Maharjan
 """
 

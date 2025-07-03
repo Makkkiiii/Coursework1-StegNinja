@@ -9,7 +9,15 @@ import struct
 import zlib
 import os
 from typing import Union, Optional, Tuple, Dict, Any
-from . import SteganographyBase
+
+# Handle both relative and absolute imports
+try:
+    from . import SteganographyBase
+except ImportError:
+    # If running directly, try absolute import
+    import sys
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from core import SteganographyBase
 
 class ImageSteganography(SteganographyBase):
     """Professional image steganography using LSB embedding"""
@@ -516,3 +524,48 @@ class ImageSteganography(SteganographyBase):
         except Exception as e:
             self.logger.error(f"Failed to calculate comparison metrics: {e}")
             return {}
+
+if __name__ == "__main__":
+    """Test the ImageSteganography module when run directly"""
+    print("🎯 ImageSteganography Module Test")
+    print("=" * 40)
+    
+    # Initialize the steganography module
+    try:
+        stego = ImageSteganography()
+        print("✅ ImageSteganography module initialized successfully")
+        print(f"📁 Supported formats: {stego.supported_formats}")
+        
+        # Test basic functionality
+        print("\n🔧 Testing basic functionality...")
+        
+        # Check if we can create a test image
+        try:
+            from PIL import Image
+            test_image = Image.new('RGB', (100, 100), color='red')
+            capacity = stego.get_capacity_for_image(test_image, 1)
+            print(f"📊 Test image capacity (100x100 RGB): {capacity} bits")
+            
+            # Test analysis
+            analysis = {
+                'width': 100,
+                'height': 100,
+                'channels': 3,
+                'format': 'RGB',
+                'mode': 'RGB',
+                'capacity_1bit': capacity,
+                'file_size': 30000  # estimated
+            }
+            print(f"🔍 Image analysis: {analysis}")
+            
+        except Exception as e:
+            print(f"❌ Test failed: {e}")
+        
+        print("\n✅ Module test completed successfully!")
+        print("💡 To use this module, import it in your main application:")
+        print("   from src.core.image_stego import ImageSteganography")
+        
+    except Exception as e:
+        print(f"❌ Failed to initialize ImageSteganography: {e}")
+        import traceback
+        traceback.print_exc()

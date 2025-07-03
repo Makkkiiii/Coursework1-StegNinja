@@ -396,14 +396,18 @@ class ImageSteganographyTab(QWidget):
         basic_info_layout = QFormLayout()
         self.info_dimensions = QLabel("")
         self.info_format = QLabel("")
-        self.info_metrics = QLabel("")
+        self.info_quality = QLabel("")
+        # Enable word wrap and set minimum height for multi-line quality display
+        self.info_quality.setWordWrap(True)
+        self.info_quality.setMinimumHeight(80)  # Enough for 4-5 lines
+        self.info_quality.setAlignment(Qt.AlignTop)  # Align to top
         basic_info_layout.addRow("Dimensions:", self.info_dimensions)
         basic_info_layout.addRow("Format:", self.info_format)
-        basic_info_layout.addRow("Comparison:", self.info_metrics)
+        basic_info_layout.addRow("Steganography Quality:", self.info_quality)
         info_layout.addLayout(basic_info_layout)
         
-        # Set maximum height to prevent excessive empty space
-        info_group.setMaximumHeight(120)
+        # Increase maximum height to accommodate multi-line quality display
+        info_group.setMaximumHeight(180)
         
         # Metadata section removed - not working properly
         # metadata_group = QGroupBox("Metadata Information")
@@ -465,11 +469,50 @@ class ImageSteganographyTab(QWidget):
             from src.core.image_stego import ImageSteganography
             metrics = ImageSteganography().get_image_comparison_metrics(self.current_image_path, file_path)
             if metrics:
-                self.info_metrics.setText(f"MSE: {metrics['mse']:.2f}, PSNR: {metrics['psnr']:.2f}, SSIM: {metrics['ssim']:.3f}")
+                # Convert technical metrics to user-friendly descriptions
+                quality_description = self.get_quality_description(metrics)
+                self.info_quality.setText(quality_description)
+                self.info_quality.setStyleSheet("color: #28a745; font-weight: bold; padding: 5px; border-radius: 3px;")  # Green styling
+                
+                # Clear any tooltips since we display metrics directly
+                self.info_quality.setToolTip("")
             else:
-                self.info_metrics.setText("-")
+                self.info_quality.setText("Unable to analyze quality")
+                self.info_quality.setStyleSheet("color: #6c757d;")  # Gray for unknown
         except Exception as e:
             self.after_image_label.setText(f"Error: {str(e)}")
+    
+    def get_quality_description(self, metrics: dict) -> str:
+        """Convert technical metrics to user-friendly quality description with technical details."""
+        mse = metrics.get('mse', 0)
+        psnr = metrics.get('psnr', 0)
+        ssim = metrics.get('ssim', 0)
+        
+        # Determine overall quality based on metrics
+        if psnr >= 50 and ssim >= 0.99:
+            quality = "🟢 EXCELLENT - Virtually undetectable"
+            details = "Hidden data is completely invisible to the naked eye"
+        elif psnr >= 40 and ssim >= 0.95:
+            quality = "🟡 VERY GOOD - Barely noticeable"
+            details = "Hidden data causes minimal visual changes"
+        elif psnr >= 30 and ssim >= 0.90:
+            quality = "🟠 GOOD - Slight differences"
+            details = "Minor visual changes may be visible on close inspection"
+        elif psnr >= 20 and ssim >= 0.80:
+            quality = "🔴 FAIR - Noticeable changes"
+            details = "Visual differences are apparent but acceptable"
+        else:
+            quality = "🔴 POOR - Significant changes"
+            details = "Hidden data causes obvious visual degradation"
+        
+        # Add simple quality metrics in plain English
+        noise_level = "Very Low" if mse < 1 else "Low" if mse < 5 else "Medium" if mse < 15 else "High"
+        image_quality = "Excellent" if psnr >= 40 else "Good" if psnr >= 30 else "Fair" if psnr >= 20 else "Poor"
+        similarity = "Nearly Identical" if ssim >= 0.95 else "Very Similar" if ssim >= 0.90 else "Similar" if ssim >= 0.80 else "Different"
+        
+        simple_metrics = f"Quality: {image_quality} | Noise: {noise_level} | Similarity: {similarity}"
+        
+        return f"{quality}\n{details}\n\n{simple_metrics}"
     
     # load_metadata function removed - metadata display not working properly
     
@@ -604,7 +647,7 @@ class ImageSteganographyTab(QWidget):
         # Reset image info
         self.info_dimensions.setText("")
         self.info_format.setText("")
-        self.info_metrics.setText("")
+        self.info_quality.setText("")
         
         # Reset image path
         self.current_image_path = ""
