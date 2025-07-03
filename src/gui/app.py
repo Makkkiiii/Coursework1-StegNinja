@@ -220,8 +220,8 @@ class WorkerThread(QThread):
                     'likely_modified': result['likely_modified'],
                     'original_size': result['original_size'],
                     'modified_size': result['modified_size'],
-                    'original_hash': result['original_hash'][:16] + '...',  # Show first 16 chars
-                    'modified_hash': result['modified_hash'][:16] + '...'   # Show first 16 chars
+                    'original_hash': result['original_hash'],  # Show complete hash
+                    'modified_hash': result['modified_hash']   # Show complete hash
                 }
                 self.finished.emit(True, f"INTEGRITY_CHECK:{integrity_info}")
             else:
@@ -1175,7 +1175,9 @@ class FileSteganographyTab(QWidget):
         
         self.integrity_results = QTextEdit()
         self.integrity_results.setReadOnly(True)
-        self.integrity_results.setMaximumHeight(200)
+        self.integrity_results.setMaximumHeight(250)  # Reasonable height for display
+        self.integrity_results.setLineWrapMode(QTextEdit.NoWrap)  # Prevent line wrapping
+        self.integrity_results.setStyleSheet("font-family: monospace; font-size: 9pt;")  # Use monospace font
         
         integrity_layout.addLayout(file_select_layout)
         integrity_layout.addLayout(file_select_layout2)
@@ -1189,7 +1191,9 @@ class FileSteganographyTab(QWidget):
         
         self.file_info_display = QTextEdit()
         self.file_info_display.setReadOnly(True)
-        self.file_info_display.setMaximumHeight(150)
+        self.file_info_display.setMaximumHeight(200)  # Reasonable height
+        self.file_info_display.setLineWrapMode(QTextEdit.NoWrap)  # Prevent line wrapping
+        self.file_info_display.setStyleSheet("font-family: monospace; font-size: 9pt;")  # Monospace font
         
         info_layout.addWidget(self.file_info_display)
         info_group.setLayout(info_layout)
@@ -1245,17 +1249,21 @@ class FileSteganographyTab(QWidget):
             file_stego = FileSteganography()
             info = file_stego.get_file_info(self.current_file_path)
             
-            info_text = f"""
-<b>File Information:</b><br>
-<b>Name:</b> {info.get('name', 'Unknown')}<br>
-<b>Format:</b> {info.get('format', 'Unknown')}<br>
-<b>Size:</b> {info.get('size', 0):,} bytes<br>
-<b>Supported:</b> {'Yes' if info.get('is_supported', False) else 'No'}<br>
-<b>Hash:</b> {info.get('hash', 'Unknown')[:16]}...<br>
-<b>Modified:</b> {info.get('modification_time', 0)}<br>
+            # Use plain text for better hash display
+            info_text = f"""File Information:
+
+Name: {info.get('name', 'Unknown')}
+Format: {info.get('format', 'Unknown')}
+Size: {info.get('size', 0):,} bytes
+Supported: {'Yes' if info.get('is_supported', False) else 'No'}
+
+Hash:
+{info.get('hash', 'Unknown')}
+
+Modified: {info.get('modification_time', 0)}
             """
             
-            self.file_info_display.setHtml(info_text)
+            self.file_info_display.setPlainText(info_text)
             
         except Exception as e:
             self.file_info_display.setPlainText(f"Error getting file info: {str(e)}")
@@ -1373,20 +1381,25 @@ class FileSteganographyTab(QWidget):
                     data_str = message[16:]  # Remove "INTEGRITY_CHECK:" prefix
                     data = ast.literal_eval(data_str)
                     
-                    integrity_html = f"""
-<b>File Integrity Check Results:</b><br>
-<b>Size Changed:</b> <span style="color: {'red' if data['size_changed'] else 'green'}">{'Yes' if data['size_changed'] else 'No'}</span><br>
-<b>Hash Changed:</b> <span style="color: {'red' if data['hash_changed'] else 'green'}">{'Yes' if data['hash_changed'] else 'No'}</span><br>
-<b>Modification Time Changed:</b> <span style="color: {'red' if data['modification_time_changed'] else 'green'}">{'Yes' if data['modification_time_changed'] else 'No'}</span><br>
-<b>Likely Modified:</b> <span style="color: {'red' if data['likely_modified'] else 'green'}">{'Yes' if data['likely_modified'] else 'No'}</span><br>
-<br>
-<b>Original Size:</b> {data['original_size']:,} bytes<br>
-<b>Modified Size:</b> {data['modified_size']:,} bytes<br>
-<b>Original Hash:</b> {data['original_hash']}<br>
-<b>Modified Hash:</b> {data['modified_hash']}<br>
-                    """
+                    # Use plain text for better hash display
+                    integrity_text = f"""File Integrity Check Results:
+
+Size Changed: {'Yes' if data['size_changed'] else 'No'}
+Hash Changed: {'Yes' if data['hash_changed'] else 'No'}
+Modification Time Changed: {'Yes' if data['modification_time_changed'] else 'No'}
+Likely Modified: {'Yes' if data['likely_modified'] else 'No'}
+
+Original Size: {data['original_size']:,} bytes
+Modified Size: {data['modified_size']:,} bytes
+
+Original Hash:
+{data['original_hash']}
+
+Modified Hash:
+{data['modified_hash']}
+"""
                     
-                    self.integrity_results.setHtml(integrity_html)
+                    self.integrity_results.setPlainText(integrity_text)
                 except Exception as e:
                     self.integrity_results.setPlainText(f"Error parsing integrity results: {str(e)}")
             else:
