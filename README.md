@@ -421,24 +421,18 @@ crypto.set_encryption_mode('AES-256-GCM')  # Authenticated encryption
 
 <div align="center">
 
-### 🖥️ **Application Interface**
+### 🖥️ **User Interface**
 
 <table>
 <tr>
 <td align="center" width="33%">
-<img src="image.png" alt="Main Interface" width="100%">
-<br><strong>🎯 Main Interface</strong>
-<br><em>Clean and intuitive design</em>
+<img src="src/utils/image.png" alt="StegNinja UI" width="100%">
 </td>
 <td align="center" width="33%">
-<img src="image-1.png" alt="Steganography Process" width="100%">
-<br><strong>🔧 Steganography Process</strong>
-<br><em>Advanced embedding features</em>
+<img src="src/utils/image-1.png" alt="StegNinja UI" width="100%">
 </td>
 <td align="center" width="33%">
-<img src="image-2.png" alt="Results View" width="100%">
-<br><strong>📊 Results & Analysis</strong>
-<br><em>Detailed output and metrics</em>
+<img src="src/utils/image-2.png" alt="StegNinja UI" width="100%">
 </td>
 </tr>
 </table>
