@@ -3,20 +3,37 @@
 <div align="center">
 
 <!-- Animated Banner -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:FF6B6B,100:4ECDC4&height=300&section=header&text=StegNinja&fontSize=90&fontAlignY=38&desc=Advanced%20Steganography%20Toolkit&descAlignY=51&descAlign=62&fontColor=FFFFFF&animation=fadeIn" />
+<img src="https://capsule-render.vercel.app/api?type=shark&color=gradient&customColorList=6,11,20&height=200&section=header&text=StegNinja&fontSize=60&fontColor=fff&animation=fadeIn&fontAlignY=55&desc=Advanced%20Steganography%20Toolkit&descAlignY=75&descSize=20" />
 
-<!-- Comprehensive Badges -->
-<p align="center">
-  <img src="https://img.shields.io/badge/python-3.8+-blue.svg?style=for-the-badge&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/GUI-PyQt5-green.svg?style=for-the-badge&logo=qt&logoColor=white" alt="PyQt5">
-  <img src="https://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge" alt="License">
-</p>
+<!-- Animated Typing Effect -->
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Security-AES%20256-red?style=for-the-badge&logo=shield&logoColor=white" alt="Security">
-  <img src="https://img.shields.io/badge/Steganography-LSB%20%7C%20Unicode%20%7C%20Whitespace-purple?style=for-the-badge&logo=eye&logoColor=white" alt="Methods">
-  <img src="https://img.shields.io/badge/File%20Support-PDF%20%7C%20DOCX%20%7C%20Images-orange?style=for-the-badge&logo=file&logoColor=white" alt="File Support">
-</p>
+<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=24&pause=1000&color=4F46E5&background=FFFFFF00&center=true&vCenter=true&width=600&height=80&lines=Strike+from+the+shadows;Hide+in+plain+sight;Leave+no+trace;Professional+Security+Tool" alt="Typing SVG" /></a>
+
+<!-- Modern Badge Grid -->
+<table align="center">
+<tr>
+<td align="center">
+  <img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python">
+</td>
+<td align="center">
+  <img src="https://img.shields.io/badge/PyQt5-GUI-41CD52?style=for-the-badge&logo=qt&logoColor=white" alt="PyQt5">
+</td>
+<td align="center">
+  <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge&logo=opensourceinitiative&logoColor=white" alt="License">
+</td>
+</tr>
+<tr>
+<td align="center">
+  <img src="https://img.shields.io/badge/Security-AES%20256-FF4B4B?style=for-the-badge&logo=shield&logoColor=white" alt="Security">
+</td>
+<td align="center">
+  <img src="https://img.shields.io/badge/Methods-LSB%20•%20Unicode%20•%20Whitespace-8B5CF6?style=for-the-badge&logo=eye&logoColor=white" alt="Methods">
+</td>
+<td align="center">
+  <img src="https://img.shields.io/badge/Files-PDF%20•%20DOCX%20•%20Images-F59E0B?style=for-the-badge&logo=file&logoColor=white" alt="File Support">
+</td>
+</tr>
+</table>
 
 </div>
 
