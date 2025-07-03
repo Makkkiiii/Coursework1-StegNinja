@@ -334,7 +334,23 @@ class ImageSteganographyTab(QWidget):
         
         self.clear_btn = QPushButton("Clear All")
         self.clear_btn.clicked.connect(self.clear_all)
-        self.clear_btn.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold;")
+        self.clear_btn.setObjectName("clearButton")
+        self.clear_btn.setStyleSheet("""
+            QPushButton#clearButton {
+                background-color: #dc3545;
+                color: white;
+                font-weight: bold;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 3px;
+            }
+            QPushButton#clearButton:hover {
+                background-color: #8b0000;
+            }
+            QPushButton#clearButton:pressed {
+                background-color: #660000;
+            }
+        """)
         
         button_layout.addWidget(self.embed_btn)
         button_layout.addWidget(self.extract_btn)
@@ -764,7 +780,23 @@ class TextSteganographyTab(QWidget):
         
         self.clear_all_btn = QPushButton("Clear All")
         self.clear_all_btn.clicked.connect(self.clear_all_text)
-        self.clear_all_btn.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold;")
+        self.clear_all_btn.setObjectName("clearButtonText")
+        self.clear_all_btn.setStyleSheet("""
+            QPushButton#clearButtonText {
+                background-color: #dc3545;
+                color: white;
+                font-weight: bold;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 3px;
+            }
+            QPushButton#clearButtonText:hover {
+                background-color: #8b0000;
+            }
+            QPushButton#clearButtonText:pressed {
+                background-color: #660000;
+            }
+        """)
         
         button_layout.addWidget(self.embed_text_btn)
         button_layout.addWidget(self.extract_text_btn)
@@ -1157,7 +1189,23 @@ class FileSteganographyTab(QWidget):
         # Clear button
         clear_btn = QPushButton("Clear All")
         clear_btn.clicked.connect(self.clear_all)
-        clear_btn.setStyleSheet("background-color: #dc3545; color: white; font-weight: bold;")
+        clear_btn.setObjectName("clearButtonFile")
+        clear_btn.setStyleSheet("""
+            QPushButton#clearButtonFile {
+                background-color: #dc3545;
+                color: white;
+                font-weight: bold;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 3px;
+            }
+            QPushButton#clearButtonFile:hover {
+                background-color: #8b0000;
+            }
+            QPushButton#clearButtonFile:pressed {
+                background-color: #660000;
+            }
+        """)
         
         # Add groups to layout
         layout.addWidget(file_group)

@@ -3,7 +3,7 @@
 <div align="center">
 
 <!-- Animated Banner -->
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:EEFF00,30:FF6B6B,60:4ECDC4,100:45B7D1&height=250&section=header&text=StegNinja&fontSize=70&fontColor=fff&animation=twinkling&fontAlignY=40&desc=Advanced%20Steganography%20Toolkit&descAlignY=65&descSize=22&rotate=2" />
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:667eea,25:764ba2,50:f093fb,75:4facfe,100:00f2fe&height=200&section=header&text=StegNinja&fontSize=60&fontColor=ffffff&fontAlignY=35&desc=Advanced%20Steganography%20Toolkit&descAlignY=55&descSize=18" />
 
 <!-- Animated Typing Effect -->
 
@@ -13,7 +13,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=flat&logo=python&logoColor=white" alt="Python">
   <img src="https://img.shields.io/badge/PyQt5-GUI-41CD52?style=flat&logo=qt&logoColor=white" alt="PyQt5">
-  <img src="https://img.shields.io/badge/License-MIT-0066CC?style=flat&logo=opensourceinitiative&logoColor=white" alt="License">
+
 </p>
 
 <p align="center">
@@ -412,5 +412,35 @@ crypto.set_encryption_mode('AES-256-GCM')  # Authenticated encryption
 
 <!-- Animated Footer -->
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:4ECDC4,100:FF6B6B&height=200&section=footer&text=Happy%20Hiding!&fontSize=50&fontAlignY=65&desc=Remember%20to%20use%20responsibly&descAlignY=85&descAlign=62&fontColor=FFFFFF&animation=fadeIn" />
+
+</div>
+
+---
+
+## 📸 **Screenshots**
+
+<div align="center">
+
+### 🖥️ **Application Interface**
+
+<table>
+<tr>
+<td align="center" width="33%">
+<img src="image.png" alt="Main Interface" width="100%">
+<br><strong>🎯 Main Interface</strong>
+<br><em>Clean and intuitive design</em>
+</td>
+<td align="center" width="33%">
+<img src="image-1.png" alt="Steganography Process" width="100%">
+<br><strong>🔧 Steganography Process</strong>
+<br><em>Advanced embedding features</em>
+</td>
+<td align="center" width="33%">
+<img src="image-2.png" alt="Results View" width="100%">
+<br><strong>📊 Results & Analysis</strong>
+<br><em>Detailed output and metrics</em>
+</td>
+</tr>
+</table>
 
 </div>
