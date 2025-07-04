@@ -308,7 +308,7 @@ class ImageSteganographyTab(QWidget):
         self.password_input.setEnabled(False)
         self.password_input.setPlaceholderText("Enter encryption password")
         
-        # Metadata options (removed - metadata extraction not working properly)
+        # Metadata options (removed)
         # self.strip_metadata = QCheckBox("Strip EXIF Metadata")
         # self.strip_metadata.setChecked(True)
         # self.strip_metadata.setToolTip("Remove EXIF metadata from output image for security")
