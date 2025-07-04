@@ -389,8 +389,127 @@ class ImageSteganography(SteganographyBase):
             self.logger.error(f"Failed to calculate comparison metrics: {e}")
             return {}
 
-if __name__ == "__main__":
-    """Test the ImageSteganography module when run directly"""
+    def detect_steganography(self, image_path: str, bits_per_channel: int = 1) -> bool:
+        """
+        Detect if an image contains LSB steganography
+        
+        Args:
+            image_path: Path to image to analyze
+            bits_per_channel: Number of LSB bits to check (1-4)
+            
+        Returns:
+            True if steganography detected
+        """
+        try:
+            # Load image
+            image = Image.open(image_path).convert('RGB')
+            image_array = np.array(image)
+            
+            # Extract potential data from LSBs
+            height, width, channels = image_array.shape
+            
+            # Extract LSBs more systematically
+            lsb_bits = []
+            for y in range(height):
+                for x in range(width):
+                    for c in range(channels):
+                        pixel_value = image_array[y, x, c]
+                        # Extract the specified number of LSBs
+                        for bit_pos in range(bits_per_channel):
+                            lsb_bits.append((pixel_value >> bit_pos) & 1)
+            
+            # Check if we have enough bits for a header
+            if len(lsb_bits) < 64:  # Need at least 8 bytes
+                return False
+            
+            # Convert first bits to bytes to check for data patterns
+            byte_data = []
+            for i in range(0, min(len(lsb_bits), 512), 8):  # Check first 64 bytes worth
+                if i + 8 <= len(lsb_bits):
+                    byte_val = 0
+                    for j in range(8):
+                        byte_val |= (lsb_bits[i + j] << j)
+                    byte_data.append(byte_val)
+            
+            if len(byte_data) < 8:
+                return False
+            
+            # Method 1: Look for length header (our embedding method uses this)
+            try:
+                # First 4 bytes might be data length
+                length = struct.unpack('<I', bytes(byte_data[:4]))[0]
+                # Check if length is reasonable
+                max_capacity = (height * width * channels * bits_per_channel) // 8
+                if 0 < length < max_capacity and length < 1000000:  # Reasonable size
+                    # Look for compressed data patterns after length header
+                    data_start = byte_data[4:8]
+                    # Check for zlib magic numbers or other compression signatures
+                    if (len(data_start) >= 2 and 
+                        ((data_start[0] == 0x78 and data_start[1] in [0x9c, 0xda, 0x01, 0x5e]) or
+                         (data_start[0] in [0x1f, 0x78, 0x42, 0x50] and data_start[1] != 0x00))):
+                        return True
+            except (struct.error, IndexError):
+                pass
+            
+            # Method 2: Statistical analysis for non-random patterns
+            if len(byte_data) >= 16:
+                # Check byte distribution - real data has certain characteristics
+                unique_bytes = len(set(byte_data[:16]))
+                zeros_count = byte_data[:16].count(0)
+                
+                # Real steganographic data tends to have:
+                # - Good variety of byte values (not too many repeats)
+                # - Not too many zeros (real data is usually compressed)
+                if unique_bytes > 8 and zeros_count < 4:
+                    return True
+            
+            # Method 3: Look for our specific embedding patterns
+            # Check if the pattern matches what our embed method would create
+            try:
+                # Try to find a sequence that might be our data
+                for start_idx in range(min(16, len(byte_data) - 8)):
+                    chunk = bytes(byte_data[start_idx:start_idx + 8])
+                    # Look for patterns that suggest structured data
+                    if len(chunk) == 8:
+                        # Check if it could be length + compressed data
+                        potential_length = struct.unpack('<I', chunk[:4])[0]
+                        if 1 <= potential_length <= 10000:  # Reasonable message size
+                            return True
+            except (struct.error, IndexError):
+                pass
+            
+            return False
+            
+        except Exception as e:
+            self.logger.error(f"Steganography detection failed: {e}")
+            return False
+
+    def auto_detect_type(self, image_path: str) -> tuple[str, str]:
+        """
+        Automatically detect steganography type (detection only, no extraction)
+        
+        Args:
+            image_path: Path to image to analyze
+            
+        Returns:
+            Tuple of (detection_type, detection_message)
+            detection_type: 'lsb', 'none', 'error'
+            detection_message: Human-readable detection result
+        """
+        try:
+            # Check different bit depths
+            for bits in [1, 2, 3, 4]:
+                if self.detect_steganography(image_path, bits):
+                    return ('lsb', f'LSB steganography detected (likely {bits}-bit)')
+            
+            # No steganography detected
+            return ('none', 'No steganographic content detected')
+            
+        except Exception as e:
+            return ('error', f'Error during detection: {str(e)}')
+
+def test_module():
+    """Quick test to verify module functionality"""
     print("🎯 ImageSteganography Module Test")
     print("=" * 40)
     
@@ -408,3 +527,6 @@ if __name__ == "__main__":
         
     except Exception as e:
         print(f"❌ Failed to initialize ImageSteganography: {e}")
+
+if __name__ == "__main__":
+    test_module()

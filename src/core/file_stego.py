@@ -432,5 +432,83 @@ class FileSteganography(SteganographyBase):
             self.logger.error(f"Failed to calculate capacity for {cover_path}: {e}")
             return 0
 
+    def detect_steganography(self, file_path: str) -> bool:
+        """
+        Detect if a file contains steganographic data
+        
+        Args:
+            file_path: Path to file to analyze
+            
+        Returns:
+            True if steganography detected
+        """
+        try:
+            file_ext = Path(file_path).suffix.lower()
+            
+            if file_ext == '.pdf':
+                return self._detect_pdf_steganography(file_path)
+            elif file_ext in ['.docx', '.xlsx', '.pptx', '.zip']:
+                return self._detect_zip_steganography(file_path)
+            else:
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Steganography detection failed for {file_path}: {e}")
+            return False
+
+    def _detect_pdf_steganography(self, file_path: str) -> bool:
+        """Detect steganography in PDF files"""
+        try:
+            marker = b"%%STEGDATA%%"
+            
+            with open(file_path, 'rb') as f:
+                content = f.read()
+            
+            # Look for our steganography marker
+            return marker in content
+            
+        except Exception:
+            return False
+
+    def _detect_zip_steganography(self, file_path: str) -> bool:
+        """Detect steganography in ZIP-based files"""
+        try:
+            with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                # Check if hidden data file exists
+                return ".stegdata" in zip_ref.namelist()
+                
+        except Exception:
+            return False
+
+    def auto_detect_type(self, file_path: str) -> tuple[str, str]:
+        """
+        Automatically detect steganography type (detection only, no extraction)
+        
+        Args:
+            file_path: Path to file to analyze
+            
+        Returns:
+            Tuple of (detection_type, detection_message)
+            detection_type: 'pdf', 'zip', 'none', 'unsupported', 'error'
+            detection_message: Human-readable detection result
+        """
+        try:
+            file_ext = Path(file_path).suffix.lower()
+            
+            if file_ext not in self.supported_formats:
+                return ('unsupported', f'Unsupported file format: {file_ext}')
+            
+            if self.detect_steganography(file_path):
+                if file_ext == '.pdf':
+                    return ('pdf', 'PDF steganography detected')
+                elif file_ext in ['.docx', '.xlsx', '.pptx', '.zip']:
+                    return ('zip', f'{file_ext.upper()} steganography detected')
+            
+            # No steganography detected
+            return ('none', 'No steganographic content detected')
+            
+        except Exception as e:
+            return ('error', f'Error during detection: {str(e)}')
+
 
 

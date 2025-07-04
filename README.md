@@ -185,7 +185,7 @@ python main.py
 ├── 🧪 tests/                 # Comprehensive test suite
 │   ├── 🔍 test_basic.py      # Basic functionality tests
 │   └── ⚙️ test_functionality.py # Advanced feature tests
-└── 📁 Example/               # Sample files and demos
+└── 📁 Test Files/            # Sample files for testing
 ```
 
 <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">

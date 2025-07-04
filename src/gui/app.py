@@ -495,6 +495,18 @@ class ImageSteganographyTab(QWidget):
             self.current_image_path = file_path
             self.image_path_label.setText(os.path.basename(file_path))
             self.load_image_preview(file_path)
+            
+            # Minimal auto-detection
+            try:
+                from src.core.image_stego import ImageSteganography
+                image_stego = ImageSteganography()
+                detection_type, detection_message = image_stego.auto_detect_type(file_path)
+                if detection_type == 'lsb':
+                    self.results_text.append(f"Auto-detect: {detection_message}")
+                elif detection_type == 'none':
+                    self.results_text.append("Auto-detect: No steganographic content detected")
+            except Exception:
+                pass  # Silent fail for minimal intrusion
     
     def load_image_preview(self, file_path: str):
         """Load and display image preview in both before/after labels."""
@@ -919,7 +931,30 @@ class TextSteganographyTab(QWidget):
         if file_path:
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
-                    self.cover_text.setPlainText(f.read())
+                    content = f.read()
+                    self.cover_text.setPlainText(content)
+                
+                # Auto-detection with method selection
+                try:
+                    from src.core.text_stego import TextSteganography
+                    text_stego = TextSteganography()
+                    detection_type, detection_message = text_stego.auto_detect_type(content)
+                    
+                    if detection_type == 'unicode':
+                        self.method_combo.setCurrentText("Unicode (Invisible)")
+                        self.results_display.append(f"🔍 Auto-detect: {detection_message}")
+                        self.results_display.append("💡 Method automatically set to Unicode")
+                    elif detection_type == 'whitespace':
+                        self.method_combo.setCurrentText("Whitespace")
+                        self.results_display.append(f"🔍 Auto-detect: {detection_message}")
+                        self.results_display.append("💡 Method automatically set to Whitespace")
+                    elif detection_type == 'none':
+                        self.results_display.append("🔍 Auto-detect: No steganographic content detected")
+                    else:
+                        self.results_display.append(f"🔍 Auto-detect: {detection_message}")
+                except Exception as e:
+                    self.results_display.append(f"⚠️ Auto-detection failed: {str(e)}")
+                    
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to load file: {str(e)}")
     
@@ -933,19 +968,45 @@ class TextSteganographyTab(QWidget):
         if file_path:
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read().strip()
+                    content = f.read()  # DON'T strip for whitespace steganography!
                     # Load steganographic text into output area for extraction
                     self.output_text.setPlainText(content)
-                    # Clear results and show a hint to the user
-                    self.results_display.clear()
-                    self.results_display.append('<span style="color: #007bff; font-weight: bold;">📂 Steganographic text loaded. Use "Extract from Text" to reveal hidden message.</span>')
+                    
+                    # Auto-detection with method selection
+                    try:
+                        from src.core.text_stego import TextSteganography
+                        text_stego = TextSteganography()
+                        detection_type, detection_message = text_stego.auto_detect_type(content)
+                        
+                        # Clear results and show detection results
+                        self.results_display.clear()
+                        
+                        if detection_type == 'unicode':
+                            self.method_combo.setCurrentText("Unicode (Invisible)")
+                            self.results_display.append(f'<span style="color: #007bff; font-weight: bold;">🔍 Auto-detect: {detection_message}</span>')
+                            self.results_display.append('<span style="color: #28a745;">💡 Method set to Unicode. Use "Extract from Text" to reveal message.</span>')
+                        elif detection_type == 'whitespace':
+                            self.method_combo.setCurrentText("Whitespace")
+                            self.results_display.append(f'<span style="color: #007bff; font-weight: bold;">� Auto-detect: {detection_message}</span>')
+                            self.results_display.append('<span style="color: #28a745;">💡 Method set to Whitespace. Use "Extract from Text" to reveal message.</span>')
+                        elif detection_type == 'none':
+                            self.results_display.append('<span style="color: #6c757d;">🔍 No steganographic content detected</span>')
+                            self.results_display.append('<span style="color: #007bff; font-weight: bold;">📂 Text loaded for manual extraction</span>')
+                        else:
+                            self.results_display.append(f'<span style="color: #ffc107;">⚠️ {detection_message}</span>')
+                            self.results_display.append('<span style="color: #007bff; font-weight: bold;">📂 Text loaded for manual extraction</span>')
+                    except Exception as e:
+                        self.results_display.clear()
+                        self.results_display.append(f'<span style="color: #dc3545;">⚠️ Auto-detection failed: {str(e)}</span>')
+                        self.results_display.append('<span style="color: #007bff; font-weight: bold;">📂 Text loaded for manual extraction</span>')
+                        
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to load file: {str(e)}")
     
     def toggle_text_encryption(self, state):
         """Toggle encryption password input for text."""
-        self.password_text.setEnabled(state == Qt.Checked) # type: ignore
-        if state != Qt.Checked: # type: ignore
+        self.password_text.setEnabled(state == Qt.CheckState.Checked) # type: ignore
+        if state != Qt.CheckState.Checked: # type: ignore
             self.password_text.clear()
     
     def embed_in_text(self):
@@ -1376,6 +1437,20 @@ class FileSteganographyTab(QWidget):
             self.current_file_path = file_path
             self.file_path_label.setText(file_path)
             self.update_file_info()
+            
+            # Minimal auto-detection
+            try:
+                from src.core.file_stego import FileSteganography
+                file_stego = FileSteganography()
+                detection_type, detection_message = file_stego.auto_detect_type(file_path)
+                if detection_type in ['pdf', 'zip']:
+                    self.results_display.append(f"Auto-detect: {detection_message}")
+                elif detection_type == 'none':
+                    self.results_display.append("Auto-detect: No steganographic content detected")
+                elif detection_type == 'unsupported':
+                    self.results_display.append(f"Auto-detect: {detection_message}")
+            except Exception:
+                pass  # Silent fail for minimal intrusion
     
     def select_original_file(self):
         """Select original file for integrity check."""
@@ -1596,7 +1671,7 @@ class MainWindow(QMainWindow):
         title_font.setPointSize(16)
         title_font.setBold(True)
         title_label.setFont(title_font)
-        title_label.setAlignment(Qt.AlignCenter) # type: ignore
+        title_label.setAlignment(Qt.AlignCenter) # type: ignore # type: ignore
         title_label.setStyleSheet("padding: 10px; color: #2c3e50;")
         
         # Tab widget

@@ -270,8 +270,8 @@ class TextSteganography(SteganographyBase):
                 # Convert each character to 8-bit binary
                 binary_data += format(ord(char), '08b')
             
-            # Add unique end marker (24 bits)
-            end_marker = '111000111000111000111000'
+            # Add unique end marker (pattern very unlikely to appear in base64)
+            end_marker = '1111000011110000111100001111'  # 28-bit unique pattern
             binary_data += end_marker
             
             print(f"[DEBUG] Whitespace embed: payload_len={len(payload)}, encoded_len={len(encoded_payload)}, binary_len={len(binary_data)}")
@@ -324,7 +324,7 @@ class TextSteganography(SteganographyBase):
     def extract_whitespace(self, stego_text: str,
                           password: Optional[str] = None) -> Optional[str]:
         """
-        Extract data from whitespace patterns - SIMPLE RELIABLE VERSION
+        Extract data from whitespace patterns - ROBUST VERSION FOR GUI COMPATIBILITY
         
         Args:
             stego_text: Text containing hidden data
@@ -335,49 +335,149 @@ class TextSteganography(SteganographyBase):
         """
         try:
             # Extract binary data from trailing whitespace
-            binary_data = ''
             lines = stego_text.split('\n')
             
-            for line in lines:
-                # Get trailing whitespace only
+            # First, let's analyze the whitespace patterns line by line
+            line_patterns = []
+            for i, line in enumerate(lines):
                 content = line.rstrip()
                 trailing = line[len(content):]
                 
-                # Convert whitespace to binary
-                for char in trailing:
-                    if char == ' ':
-                        binary_data += '0'
-                    elif char == '\t':
-                        binary_data += '1'
+                if trailing:
+                    # Convert whitespace to binary
+                    pattern = ''
+                    for char in trailing:
+                        if char == ' ':
+                            pattern += '0'
+                        elif char == '\t':
+                            pattern += '1'
+                    line_patterns.append((i+1, len(pattern), pattern))
+                    print(f"[DEBUG] Line {i+1}: {len(pattern)} whitespace chars")
             
+            # Combine all patterns
+            binary_data = ''.join(pattern for _, _, pattern in line_patterns)
             print(f"[DEBUG] Whitespace extract: found {len(binary_data)} bits from {len(lines)} lines")
             
             if not binary_data:
                 print("[DEBUG] No whitespace data found")
                 return None
             
-            # Look for end marker
-            end_marker = '111000111000111000111000'
+            # Look for end marker - but first check for common GUI corruption
+            end_marker = '1111000011110000111100001111'
+            
+            # Strategy 1: Check if first line has 33 bits instead of 32 (most common GUI issue)
+            # Do this FIRST before trying normal extraction
+            if line_patterns and line_patterns[0][1] == 33:
+                print("[DEBUG] Detected first line has 33 bits (GUI corruption), trying to fix...")
+                
+                # Remove the LAST bit from first line (GUI adds at end, not beginning)
+                corrected_patterns = []
+                for i, (line_num, length, pattern) in enumerate(line_patterns):
+                    if i == 0:  # First line
+                        corrected_patterns.append(pattern[:-1])  # Remove LAST bit, not first
+                    else:
+                        corrected_patterns.append(pattern)
+                
+                corrected_binary = ''.join(corrected_patterns)
+                end_pos = corrected_binary.find(end_marker)
+                
+                if end_pos != -1:
+                    payload_binary = corrected_binary[:end_pos]
+                    if len(payload_binary) % 8 == 0:
+                        print(f"[DEBUG] Fixed by removing last bit from first line")
+                        return self._decode_payload(payload_binary, password)
+                    else:
+                        print(f"[DEBUG] Payload length still not divisible by 8 after first-line fix: {len(payload_binary)}")
+                
+                # If removing last bit didn't work, try removing first bit as fallback
+                corrected_patterns = []
+                for i, (line_num, length, pattern) in enumerate(line_patterns):
+                    if i == 0:  # First line
+                        corrected_patterns.append(pattern[1:])  # Remove first bit
+                    else:
+                        corrected_patterns.append(pattern)
+                
+                corrected_binary = ''.join(corrected_patterns)
+                end_pos = corrected_binary.find(end_marker)
+                
+                if end_pos != -1:
+                    payload_binary = corrected_binary[:end_pos]
+                    if len(payload_binary) % 8 == 0:
+                        print(f"[DEBUG] Fixed by removing first bit from first line (fallback)")
+                        return self._decode_payload(payload_binary, password)
+            
+            # Normal case - try finding end marker in original data
             end_pos = binary_data.find(end_marker)
             
-            if end_pos == -1:
-                print(f"[DEBUG] End marker not found in first 100 bits: {binary_data[:100]}")
-                return None
+            if end_pos != -1:
+                payload_binary = binary_data[:end_pos]
+                if len(payload_binary) % 8 == 0:
+                    print(f"[DEBUG] Payload binary length: {len(payload_binary)} bits")
+                    return self._decode_payload(payload_binary, password)
+                else:
+                    print(f"[DEBUG] Normal extraction: payload length not divisible by 8: {len(payload_binary)}")
             
-            # Extract payload binary
-            payload_binary = binary_data[:end_pos]
-            print(f"[DEBUG] Payload binary length: {len(payload_binary)} bits")
+            # End marker not found or payload length wrong - try more correction strategies
+            print(f"[DEBUG] End marker not found directly or payload corrupted")
+            
+            # Strategy 2: Try removing bits from the beginning (first line corruption)
+            for remove_from_start in range(1, 11):
+                if len(binary_data) > remove_from_start:
+                    truncated_data = binary_data[remove_from_start:]
+                    end_pos = truncated_data.find(end_marker)
+                    if end_pos != -1:
+                        payload_binary = truncated_data[:end_pos]
+                        if len(payload_binary) % 8 == 0:
+                            print(f"[DEBUG] Found marker by removing {remove_from_start} bits from start")
+                            return self._decode_payload(payload_binary, password)
+            
+            # Strategy 3: Try removing bits from the end (last line corruption)
+            for remove_from_end in range(1, 11):
+                if len(binary_data) > remove_from_end:
+                    truncated_data = binary_data[:-remove_from_end]
+                    end_pos = truncated_data.find(end_marker)
+                    if end_pos != -1:
+                        payload_binary = truncated_data[:end_pos]
+                        if len(payload_binary) % 8 == 0:
+                            print(f"[DEBUG] Found marker by removing {remove_from_end} bits from end")
+                            return self._decode_payload(payload_binary, password)
+            
+            print("[DEBUG] End marker not found even with error correction")
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Whitespace extraction failed: {e}")
+            return None
+    
+    def _decode_payload(self, payload_binary: str, password: Optional[str] = None) -> Optional[str]:
+        """
+        Decode binary payload to message
+        
+        Args:
+            payload_binary: Binary string representing the payload
+            password: Optional decryption password
+            
+        Returns:
+            Decoded message or None if failed
+        """
+        try:
+            # Ensure payload length is divisible by 8
+            if len(payload_binary) % 8 != 0:
+                remainder = len(payload_binary) % 8
+                print(f"[DEBUG] Binary length not divisible by 8, remainder: {remainder}")
+                return None
             
             # Convert binary back to characters (8 bits each)
-            if len(payload_binary) % 8 != 0:
-                print(f"[DEBUG] Binary length not divisible by 8: {len(payload_binary)}")
-                return None
-            
             encoded_payload = ''
             for i in range(0, len(payload_binary), 8):
                 byte_bits = payload_binary[i:i+8]
                 char_code = int(byte_bits, 2)
-                encoded_payload += chr(char_code)
+                # Ensure character is valid ASCII range for base64
+                if 0 <= char_code <= 127:
+                    encoded_payload += chr(char_code)
+                else:
+                    print(f"[DEBUG] Invalid character code: {char_code} at position {i//8}")
+                    return None
             
             print(f"[DEBUG] Reconstructed base64: {encoded_payload[:50]}...")
             
@@ -407,28 +507,27 @@ class TextSteganography(SteganographyBase):
                 else:
                     return None
             elif self.crypto_manager and self.crypto_manager.is_key_set():
-                try:
-                    payload = self.crypto_manager.decrypt(payload)
-                except Exception as e:
-                    self.logger.error(f"Decryption failed: {e}")
-                    raise ValueError("Invalid password or corrupted data")
+                payload = self.crypto_manager.decrypt(payload)
             
             try:
                 result = payload.decode('utf-8')
-                print(f"[DEBUG] Final decoded result: '{result}'")
+                print(f"[DEBUG] Final decoded result: {repr(result)}")
                 return result
-            except UnicodeDecodeError as e:
-                print(f"[DEBUG] UTF-8 decode failed: {e}")
-                return None
-            
+            except UnicodeDecodeError:
+                # If UTF-8 decode fails, it might be encrypted data
+                if not password and not (self.crypto_manager and self.crypto_manager.is_key_set()):
+                    raise ValueError("Data appears to be encrypted but no password provided")
+                else:
+                    raise ValueError("Invalid password or corrupted data")
+                    
         except ValueError as e:
+            # Re-raise password-related errors
             if "Invalid password" in str(e) or "encrypted but no password" in str(e):
                 raise e
-            self.logger.error(f"Whitespace extraction failed: {e}")
+            print(f"[DEBUG] Payload decode error: {e}")
             return None
         except Exception as e:
-            print(f"[DEBUG] Whitespace extraction exception: {e}")
-            self.logger.error(f"Whitespace extraction failed: {e}")
+            print(f"[DEBUG] Payload decode error: {e}")
             return None
 
     def embed(self, cover_data: str, payload: Union[str, bytes], 
@@ -458,3 +557,80 @@ class TextSteganography(SteganographyBase):
             return len(cover_data.split('\n'))  # 8 bits per line -> 1 byte
         else:
             return 0
+
+    def detect_unicode_steganography(self, text: str) -> bool:
+        """
+        Detect if text contains Unicode steganography (zero-width characters)
+        
+        Args:
+            text: Text to analyze
+            
+        Returns:
+            True if Unicode steganography detected
+        """
+        try:
+            # Check for zero-width characters
+            for char in text:
+                if char in self.char_to_bit:
+                    return True
+            return False
+        except Exception:
+            return False
+
+    def detect_whitespace_steganography(self, text: str) -> bool:
+        """
+        Detect if text contains whitespace steganography (trailing whitespace patterns)
+        
+        Args:
+            text: Text to analyze
+            
+        Returns:
+            True if whitespace steganography detected
+        """
+        try:
+            lines = text.split('\n')
+            
+            # Check if any lines have trailing whitespace
+            for line in lines:
+                content = line.rstrip()
+                trailing = line[len(content):]
+                
+                if trailing:  # Found trailing whitespace
+                    # Check if it contains a pattern (space/tab combination)
+                    has_space = ' ' in trailing
+                    has_tab = '\t' in trailing
+                    
+                    # If it has both space and tab, or just tabs, it's likely steganographic
+                    if has_tab or (has_space and len(trailing) > 1):
+                        return True
+            
+            return False
+        except Exception:
+            return False
+
+    def auto_detect_type(self, text: str) -> tuple[str, str]:
+        """
+        Automatically detect steganography type (detection only, no extraction)
+        
+        Args:
+            text: Text to analyze
+            
+        Returns:
+            Tuple of (detection_type, detection_message)
+            detection_type: 'unicode', 'whitespace', 'none', 'error'
+            detection_message: Human-readable detection result
+        """
+        try:
+            # Check for Unicode steganography first
+            if self.detect_unicode_steganography(text):
+                return ('unicode', 'Unicode steganography detected')
+            
+            # Check for whitespace steganography
+            if self.detect_whitespace_steganography(text):
+                return ('whitespace', 'Whitespace steganography detected')
+            
+            # No steganography detected
+            return ('none', 'No steganographic content detected')
+            
+        except Exception as e:
+            return ('error', f'Error during detection: {str(e)}')

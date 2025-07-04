@@ -18,7 +18,7 @@ def main():
     """Main application entry point"""
     try:
         from PyQt5.QtWidgets import QApplication
-        from src.gui.app import MainWindow
+        from src.gui.app import MainWindow # type: ignore
         
         # Create and run application
         app = QApplication(sys.argv)
