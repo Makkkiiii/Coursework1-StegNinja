@@ -987,7 +987,7 @@ class TextSteganographyTab(QWidget):
                             self.results_display.append('<span style="color: #28a745;">💡 Method set to Unicode. Use "Extract from Text" to reveal message.</span>')
                         elif detection_type == 'whitespace':
                             self.method_combo.setCurrentText("Whitespace")
-                            self.results_display.append(f'<span style="color: #007bff; font-weight: bold;">� Auto-detect: {detection_message}</span>')
+                            self.results_display.append(f'<span style="color: #007bff; font-weight: bold;">🔍 Auto-detect: {detection_message}</span>')
                             self.results_display.append('<span style="color: #28a745;">💡 Method set to Whitespace. Use "Extract from Text" to reveal message.</span>')
                         elif detection_type == 'none':
                             self.results_display.append('<span style="color: #6c757d;">🔍 No steganographic content detected</span>')
