@@ -144,10 +144,25 @@ class TextSteganography(SteganographyBase):
             for i in range(0, len(payload_binary), 8):
                 byte_str = payload_binary[i:i+8]
                 if len(byte_str) == 8:
-                    b64_payload += chr(int(byte_str, 2))
+                    char_code = int(byte_str, 2)
+                    # Ensure character is in valid range
+                    if 0 <= char_code <= 255:
+                        b64_payload += chr(char_code)
+                    else:
+                        self.logger.warning(f"Invalid character code: {char_code}")
+                        return None
             
             # Decode base64
-            payload = base64.b64decode(b64_payload.encode('ascii'))
+            try:
+                # Fix base64 padding if needed
+                padding_needed = 4 - (len(b64_payload) % 4)
+                if padding_needed != 4:  # Only add padding if needed
+                    b64_payload += '=' * padding_needed
+                
+                payload = base64.b64decode(b64_payload.encode('latin-1'))  # Use latin-1 instead of ascii
+            except Exception as e:
+                self.logger.error(f"Base64 decode failed: {e}")
+                return None
             
             # Decrypt if needed
             if password and not self.crypto_manager:
@@ -216,7 +231,7 @@ class TextSteganography(SteganographyBase):
     def embed_whitespace(self, cover_text: str, payload: Union[str, bytes],
                         password: Optional[str] = None) -> str:
         """
-        Embed data using whitespace manipulation
+        Embed data using whitespace manipulation - SIMPLE RELIABLE VERSION
         
         Args:
             cover_text: Cover text to hide data in
@@ -227,7 +242,7 @@ class TextSteganography(SteganographyBase):
             Text with embedded data
         """
         try:
-            # Prepare payload (same as Unicode method)
+            # Prepare payload
             if isinstance(payload, str):
                 payload = payload.encode('utf-8')
                 
@@ -240,14 +255,26 @@ class TextSteganography(SteganographyBase):
                 crypto = CryptoManager()
                 salt = crypto.set_password(password)
                 encrypted_payload = crypto.encrypt(payload)
-                # Prepend salt to encrypted data for later retrieval
                 payload = salt + encrypted_payload
             elif self.crypto_manager and self.crypto_manager.is_key_set():
                 payload = self.crypto_manager.encrypt(payload)
-                
-            b64_payload = base64.b64encode(payload).decode('ascii') # type: ignore
-            binary_data = ''.join(format(ord(char), '08b') for char in b64_payload)
-            binary_data += '1111111111111110'  # End marker
+            
+            # Use base64 encoding for reliability
+            if isinstance(payload, str):
+                payload = payload.encode('utf-8')
+            encoded_payload = base64.b64encode(payload).decode('ascii')
+            
+            # Convert to binary using simple character mapping
+            binary_data = ''
+            for char in encoded_payload:
+                # Convert each character to 8-bit binary
+                binary_data += format(ord(char), '08b')
+            
+            # Add unique end marker (24 bits)
+            end_marker = '111000111000111000111000'
+            binary_data += end_marker
+            
+            print(f"[DEBUG] Whitespace embed: payload_len={len(payload)}, encoded_len={len(encoded_payload)}, binary_len={len(binary_data)}")
             
             # Split into lines and add trailing whitespace
             lines = cover_text.split('\n')
@@ -255,31 +282,40 @@ class TextSteganography(SteganographyBase):
             bit_index = 0
             
             for line in lines:
-                if bit_index < len(binary_data):
-                    # Calculate how many bits to put on this line
-                    remaining_lines = len(lines) - len(result_lines)
-                    remaining_bits = len(binary_data) - bit_index
-                    
-                    if remaining_lines == 1:
-                        # Last line, put all remaining bits
-                        bits_this_line = remaining_bits
+                whitespace = ''
+                # Add up to 32 bits per line
+                for _ in range(32):
+                    if bit_index < len(binary_data):
+                        bit = binary_data[bit_index]
+                        whitespace += ' ' if bit == '0' else '\t'
+                        bit_index += 1
                     else:
-                        # Distribute bits evenly
-                        bits_this_line = min(32, (remaining_bits + remaining_lines - 1) // remaining_lines)
-                    
-                    # Add trailing whitespace based on binary data
-                    trailing = ''
-                    for _ in range(bits_this_line):
-                        if bit_index < len(binary_data):
-                            bit = binary_data[bit_index]
-                            trailing += self.ws_chars[bit]
-                            bit_index += 1
-                    
-                    result_lines.append(line + trailing)
-                else:
-                    result_lines.append(line)
+                        break
+                
+                result_lines.append(line + whitespace)
+                
+                if bit_index >= len(binary_data):
+                    break
             
-            return '\n'.join(result_lines)
+            # Add empty lines if we need more space
+            while bit_index < len(binary_data):
+                whitespace = ''
+                for _ in range(32):
+                    if bit_index < len(binary_data):
+                        bit = binary_data[bit_index]
+                        whitespace += ' ' if bit == '0' else '\t'
+                        bit_index += 1
+                    else:
+                        break
+                result_lines.append(whitespace)
+            
+            # Add remaining lines without changes
+            if len(lines) > len(result_lines):
+                result_lines.extend(lines[len(result_lines):])
+            
+            result = '\n'.join(result_lines)
+            print(f"[DEBUG] Whitespace embed complete: {len(result)} chars, {len(result_lines)} lines, {bit_index} bits embedded")
+            return result
             
         except Exception as e:
             self.logger.error(f"Whitespace embedding failed: {e}")
@@ -288,7 +324,7 @@ class TextSteganography(SteganographyBase):
     def extract_whitespace(self, stego_text: str,
                           password: Optional[str] = None) -> Optional[str]:
         """
-        Extract data from whitespace patterns
+        Extract data from whitespace patterns - SIMPLE RELIABLE VERSION
         
         Args:
             stego_text: Text containing hidden data
@@ -298,41 +334,59 @@ class TextSteganography(SteganographyBase):
             Extracted message or None if failed
         """
         try:
-            # Extract whitespace patterns
+            # Extract binary data from trailing whitespace
             binary_data = ''
             lines = stego_text.split('\n')
             
             for line in lines:
-                # Get trailing whitespace
-                trailing = line[len(line.rstrip()):]
+                # Get trailing whitespace only
+                content = line.rstrip()
+                trailing = line[len(content):]
                 
-                # Convert to binary
+                # Convert whitespace to binary
                 for char in trailing:
                     if char == ' ':
                         binary_data += '0'
                     elif char == '\t':
                         binary_data += '1'
             
+            print(f"[DEBUG] Whitespace extract: found {len(binary_data)} bits from {len(lines)} lines")
+            
             if not binary_data:
+                print("[DEBUG] No whitespace data found")
                 return None
             
-            # Find end marker and extract (same as Unicode method)
-            end_marker = '1111111111111110'
+            # Look for end marker
+            end_marker = '111000111000111000111000'
             end_pos = binary_data.find(end_marker)
             
             if end_pos == -1:
+                print(f"[DEBUG] End marker not found in first 100 bits: {binary_data[:100]}")
                 return None
             
+            # Extract payload binary
             payload_binary = binary_data[:end_pos]
+            print(f"[DEBUG] Payload binary length: {len(payload_binary)} bits")
             
-            # Convert to text
-            b64_payload = ''
+            # Convert binary back to characters (8 bits each)
+            if len(payload_binary) % 8 != 0:
+                print(f"[DEBUG] Binary length not divisible by 8: {len(payload_binary)}")
+                return None
+            
+            encoded_payload = ''
             for i in range(0, len(payload_binary), 8):
-                byte_str = payload_binary[i:i+8]
-                if len(byte_str) == 8:
-                    b64_payload += chr(int(byte_str, 2))
+                byte_bits = payload_binary[i:i+8]
+                char_code = int(byte_bits, 2)
+                encoded_payload += chr(char_code)
             
-            payload = base64.b64decode(b64_payload.encode('ascii'))
+            print(f"[DEBUG] Reconstructed base64: {encoded_payload[:50]}...")
+            
+            # Decode from base64
+            try:
+                payload = base64.b64decode(encoded_payload.encode('ascii'))
+            except Exception as e:
+                print(f"[DEBUG] Base64 decode failed: {e}")
+                return None
             
             # Decrypt if needed
             if password and not self.crypto_manager:
@@ -340,7 +394,7 @@ class TextSteganography(SteganographyBase):
                     from utils.crypto import CryptoManager
                 except ImportError:
                     from ..utils.crypto import CryptoManager
-                if len(payload) >= 16:  # Salt is 16 bytes
+                if len(payload) >= 16:
                     salt = payload[:16]
                     encrypted_data = payload[16:]
                     crypto = CryptoManager()
@@ -351,11 +405,6 @@ class TextSteganography(SteganographyBase):
                         self.logger.error(f"Decryption failed: {e}")
                         raise ValueError("Invalid password or corrupted data")
                 else:
-                    # Check if data looks encrypted but no proper encryption format
-                    if len(payload) > 20:
-                        payload_str = payload.decode('utf-8', errors='ignore')
-                        if payload_str.startswith(('gAAAAA', 'gAAAAAB')):
-                            raise ValueError("Data appears to be encrypted but no password provided")
                     return None
             elif self.crypto_manager and self.crypto_manager.is_key_set():
                 try:
@@ -364,24 +413,21 @@ class TextSteganography(SteganographyBase):
                     self.logger.error(f"Decryption failed: {e}")
                     raise ValueError("Invalid password or corrupted data")
             
-            # Check if we have encrypted data but no password
-            if not password and not (self.crypto_manager and self.crypto_manager.is_key_set()):
-                try:
-                    payload_str = payload.decode('utf-8', errors='ignore')
-                    if len(payload_str) > 20 and payload_str.startswith(('gAAAAA', 'gAAAAAB')):
-                        raise ValueError("Data appears to be encrypted but no password provided")
-                except:
-                    pass
-            
-            return payload.decode('utf-8')
+            try:
+                result = payload.decode('utf-8')
+                print(f"[DEBUG] Final decoded result: '{result}'")
+                return result
+            except UnicodeDecodeError as e:
+                print(f"[DEBUG] UTF-8 decode failed: {e}")
+                return None
             
         except ValueError as e:
-            # Re-raise password-related errors
             if "Invalid password" in str(e) or "encrypted but no password" in str(e):
                 raise e
             self.logger.error(f"Whitespace extraction failed: {e}")
             return None
         except Exception as e:
+            print(f"[DEBUG] Whitespace extraction exception: {e}")
             self.logger.error(f"Whitespace extraction failed: {e}")
             return None
 

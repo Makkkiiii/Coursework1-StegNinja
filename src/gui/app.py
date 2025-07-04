@@ -123,12 +123,24 @@ class WorkerThread(QThread):
             # For text stego, we pass the password directly, not the crypto manager
             password = self.kwargs.get('password')
         
+        # Debug logging
+        print(f"[DEBUG] _embed_text: method={method}, cover_text_len={len(self.kwargs['cover_text'])}, secret_len={len(self.kwargs['secret_message'])}")
+        if method == 'whitespace':
+            lines_count = len(self.kwargs['cover_text'].split('\n'))
+            print(f"[DEBUG] Whitespace method: cover text has {lines_count} lines")
+        
         result = text_stego.embed(
             self.kwargs['cover_text'],
             self.kwargs['secret_message'],
             method=method,
             password=password
         )
+        
+        # Debug logging
+        print(f"[DEBUG] _embed_text: result_len={len(result) if result else 0}, changed={result != self.kwargs['cover_text'] if result else False}")
+        if method == 'whitespace' and result:
+            result_lines = len(result.split('\n'))
+            print(f"[DEBUG] Whitespace result: {result_lines} lines in output")
         
         if result and result != self.kwargs['cover_text']:
             self.finished.emit(True, f"STEGO_TEXT:{result}")
@@ -146,8 +158,29 @@ class WorkerThread(QThread):
             # For text stego, we pass the password directly, not the crypto manager
             password = self.kwargs.get('password')
         
+        # Debug logging
+        print(f"[DEBUG] _extract_text: method={method}, stego_text_len={len(self.kwargs['stego_text'])}")
+        if method == 'whitespace':
+            lines_count = len(self.kwargs['stego_text'].split('\n'))
+            print(f"[DEBUG] Whitespace extraction: stego text has {lines_count} lines")
+            
+            # Check if there's actually trailing whitespace
+            lines = self.kwargs['stego_text'].split('\n')
+            whitespace_found = False
+            for i, line in enumerate(lines):
+                trailing = line[len(line.rstrip()):]
+                if trailing:
+                    whitespace_found = True
+                    print(f"[DEBUG] Line {i+1}: {len(trailing)} whitespace chars")
+            
+            if not whitespace_found:
+                print(f"[DEBUG] WARNING: No trailing whitespace found - this might not be whitespace steganographic text!")
+        
         try:
             message = text_stego.extract(self.kwargs['stego_text'], method=method, password=password)
+            
+            # Debug logging
+            print(f"[DEBUG] _extract_text: extracted_message='{message}'")
             
             if message:
                 self.finished.emit(True, f"Extracted message: {message}")
@@ -161,6 +194,20 @@ class WorkerThread(QThread):
             else:
                 self.finished.emit(False, f"Extraction failed: {str(e)}")
         except Exception as e:
+            self.finished.emit(False, f"Extraction failed: {str(e)}")
+            
+            if message:
+                self.finished.emit(True, f"Extracted message: {message}")
+            else:
+                self.finished.emit(False, "No hidden message found.")
+        except ValueError as e: # type: ignore
+            if "Invalid password" in str(e):
+                self.finished.emit(False, "Invalid password or corrupted data")
+            elif "no password provided" in str(e):
+                self.finished.emit(False, "Data appears to be encrypted but no password provided")
+            else:
+                self.finished.emit(False, f"Extraction failed: {str(e)}")
+        except Exception as e: # type: ignore
             self.finished.emit(False, f"Extraction failed: {str(e)}")
     
     def _embed_file(self):
@@ -711,6 +758,7 @@ class TextSteganographyTab(QWidget):
         
         self.cover_text = QTextEdit()
         self.cover_text.setPlaceholderText("Enter or paste the cover text here...")
+        self.cover_text.setLineWrapMode(QTextEdit.NoWrap)  # Prevent line wrapping for whitespace steganography!
         
         # Load buttons layout
         load_btn_layout = QHBoxLayout()
@@ -816,6 +864,7 @@ class TextSteganographyTab(QWidget):
         
         self.output_text = QTextEdit()
         self.output_text.setReadOnly(True)
+        self.output_text.setLineWrapMode(QTextEdit.NoWrap)  # Prevent line wrapping for whitespace steganography!
         
         # Output buttons
         output_btn_layout = QHBoxLayout()
@@ -907,11 +956,34 @@ class TextSteganographyTab(QWidget):
         if not cover_text:
             QMessageBox.warning(self, "Warning", "Please enter cover text.")
             return
-        
+
         if not secret_text:
             QMessageBox.warning(self, "Warning", "Please enter a secret message.")
             return
+
+        # Get selected method
+        method_map = {
+            "Unicode (Invisible)": "unicode",
+            "Whitespace": "whitespace"
+        }
+        method = method_map.get(self.method_combo.currentText(), "unicode")
         
+        # Show user what method is being used
+        self.results_display.append(f'<span style="color: #007bff;">🔧 Embedding using <b>{method.upper()}</b> method...</span>')
+        
+        # Special validation for whitespace method
+        if method == "whitespace" and '\n' not in cover_text:
+            reply = QMessageBox.question(
+                self, "Whitespace Method Notice", 
+                "Whitespace steganography works best with multi-line text.\n\n"
+                "Your cover text is single-line. The method will still work by adding extra lines, "
+                "but for better results consider using multi-line text.\n\n"
+                "Continue anyway?",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if reply == QMessageBox.No:
+                return
+
         # Setup encryption if needed
         crypto = None
         password = None
@@ -924,13 +996,6 @@ class TextSteganographyTab(QWidget):
             crypto = CryptoManager()
             crypto.set_password(password)
         
-        # Get selected method
-        method_map = {
-            "Unicode (Invisible)": "unicode",
-            "Whitespace": "whitespace"
-        }
-        method = method_map.get(self.method_combo.currentText(), "unicode")
-        
         # Start background operation
         self.start_text_operation("embed_text", {
             'cover_text': cover_text,
@@ -942,16 +1007,26 @@ class TextSteganographyTab(QWidget):
     
     def extract_from_text(self):
         """Extract secret message from text."""
-        # First try to get steganographic text from output area
-        stego_text = self.output_text.toPlainText().strip()
+        # First try to get steganographic text from output area - DON'T strip() for whitespace method!
+        stego_text = self.output_text.toPlainText()
         
         # If output area is empty, fall back to cover text area
-        if not stego_text:
-            stego_text = self.cover_text.toPlainText().strip()
+        if not stego_text.strip():  # Only check if completely empty
+            stego_text = self.cover_text.toPlainText()
         
-        if not stego_text:
+        if not stego_text.strip():  # Only check if completely empty
             QMessageBox.warning(self, "Warning", "Please enter steganographic text to extract from. Use 'Load Steganographic Text' or embed a message first.")
             return
+
+        # Get selected method - THIS IS CRITICAL!
+        method_map = {
+            "Unicode (Invisible)": "unicode",
+            "Whitespace": "whitespace"
+        }
+        method = method_map.get(self.method_combo.currentText(), "unicode")
+        
+        # Show user what method is being used
+        self.results_display.append(f'<span style="color: #007bff;">🔍 Extracting using <b>{method.upper()}</b> method from {len(stego_text)} characters...</span>')
         
         # Setup encryption if needed
         crypto = None
@@ -964,13 +1039,6 @@ class TextSteganographyTab(QWidget):
             
             crypto = CryptoManager()
             crypto.set_password(password)
-        
-        # Get selected method
-        method_map = {
-            "Unicode (Invisible)": "unicode",
-            "Whitespace": "whitespace"
-        }
-        method = method_map.get(self.method_combo.currentText(), "unicode")
         
         # Start background operation
         self.start_text_operation("extract_text", {
@@ -1009,14 +1077,16 @@ class TextSteganographyTab(QWidget):
                 self.results_display.append('<span style="color: #28a745; font-weight: bold;">✓ Text steganography completed successfully!</span>')
                 self.results_display.append('<span style="color: #007bff; font-weight: bold;">📋 Steganographic text ready for copying/saving</span>')
             elif message.startswith("Extracted message:"):
-                # Show extracted message in red formatting
+                # Show extracted message in results display, but keep steganographic text in output
                 extracted_msg = message[18:].strip()  # Remove "Extracted message: " prefix
-                self.output_text.clear()  # Clear previous content
+                # Don't clear output_text - keep the steganographic text there
+                self.results_display.clear()  # Clear previous results
                 self.results_display.append(f'<span style="color: #dc3545; font-weight: bold;">🔍 EXTRACTED MESSAGE: {extracted_msg}</span>')
+                self.results_display.append('<span style="color: #28a745;">✓ Message successfully extracted from steganographic text</span>')
             else:
-                self.output_text.append(f'<span style="color: #28a745; font-weight: bold;">✓ {message}</span>')
+                self.results_display.append(f'<span style="color: #28a745; font-weight: bold;">✓ {message}</span>')
         else:
-            self.output_text.append(f'<span style="color: #dc3545; font-weight: bold;">✗ {message}</span>')
+            self.results_display.append(f'<span style="color: #dc3545; font-weight: bold;">✗ {message}</span>')
         
         self.worker_thread = None
     
@@ -1030,15 +1100,15 @@ class TextSteganographyTab(QWidget):
         if file_path:
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read().strip()
+                    content = f.read()  # Don't strip - preserve whitespace steganography!
                     self.output_text.setPlainText(content)
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to load file: {str(e)}")
     
     def save_output(self):
         """Save output to file."""
-        content = self.output_text.toPlainText().strip()
-        if not content:
+        content = self.output_text.toPlainText()  # Don't strip for whitespace steganography!
+        if not content.strip():  # Only check if completely empty
             QMessageBox.warning(self, "Warning", "No content to save.")
             return
         
@@ -1060,8 +1130,8 @@ class TextSteganographyTab(QWidget):
     
     def copy_output(self):
         """Copy output to clipboard."""
-        content = self.output_text.toPlainText().strip()
-        if content:
+        content = self.output_text.toPlainText()  # Don't strip for whitespace steganography!
+        if content.strip():  # Only check if completely empty
             QApplication.clipboard().setText(content) # type: ignore
             # Brief status message
             self.results_display.append("📋 Steganographic text copied to clipboard!")
