@@ -426,8 +426,7 @@ class ImageSteganographyTab(QWidget):
         info_group.setMaximumHeight(180)
         
         # Metadata section removed - not working properly
-        # metadata_group = QGroupBox("Metadata Information")
-        # ... (entire metadata section removed)
+
         
         info_group.setLayout(info_layout)
         layout.addWidget(info_group)
@@ -464,9 +463,7 @@ class ImageSteganographyTab(QWidget):
                 self.before_image_label.setPixmap(scaled_pixmap)
                 self.info_dimensions.setText(f"{pixmap.width()} x {pixmap.height()}")
                 self.info_format.setText(image_format)
-                
-                # Load metadata - removed (not working properly)
-                # self.load_metadata(file_path, is_original=True)
+
         except Exception as e:
             self.before_image_label.setText(f"Error: {str(e)}")
 
@@ -477,9 +474,6 @@ class ImageSteganographyTab(QWidget):
             if not pixmap.isNull():
                 scaled_pixmap = pixmap.scaled(300, 225, Qt.KeepAspectRatio, Qt.SmoothTransformation) # type: ignore
                 self.after_image_label.setPixmap(scaled_pixmap)
-                
-                # Load metadata for stego image - removed (not working properly)
-                # self.load_metadata(file_path, is_original=False)
                 
             # Show comparison metrics
             from src.core.image_stego import ImageSteganography
@@ -529,8 +523,6 @@ class ImageSteganographyTab(QWidget):
         simple_metrics = f"Quality: {image_quality} | Noise: {noise_level} | Similarity: {similarity}"
         
         return f"{quality}\n{details}\n\n{simple_metrics}"
-    
-    # load_metadata function removed - metadata display not working properly
     
     def toggle_encryption(self, state):
         """Toggle encryption password input."""

@@ -112,8 +112,8 @@ class ImageSteganography(SteganographyBase):
             result_image = Image.fromarray(result_array.astype('uint8'))
             
             # Strip metadata for security (if requested)
-            if strip_metadata:
-                self.strip_metadata(result_image)
+            #if strip_metadata:
+                #self.strip_metadata(result_image)
             
             # Save with format detection
             if output_path.lower().endswith(('.jpg', '.jpeg')):
@@ -330,19 +330,7 @@ class ImageSteganography(SteganographyBase):
             self.logger.error(f"Capacity analysis failed: {e}")
             return {'max_payload_size': 0, 'efficiency': 0}
     
-    def strip_metadata(self, image: Image.Image):
-        """Remove EXIF and other metadata from image for security"""
-        try:
-            if hasattr(image, '_getexif') and image._getexif() is not None: # type: ignore
-                data = list(image.getdata())
-                image_without_exif = Image.new(image.mode, image.size)
-                image_without_exif.putdata(data)
-                return image_without_exif
-            return image
-        except Exception as e:
-            self.logger.warning(f"Failed to strip metadata: {e}")
-            return image
-    
+ 
     def preserve_timestamps(self, source_path: str, target_path: str):
         """Preserve original file timestamps for stealth"""
         try:
