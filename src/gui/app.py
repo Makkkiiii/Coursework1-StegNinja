@@ -885,9 +885,11 @@ class TextSteganographyTab(QWidget):
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read().strip()
-                    self.cover_text.setPlainText(content)
-                    # Show a hint to the user
-                    self.results_display.append("📂 Steganographic text loaded. Use 'Extract from Text' to reveal hidden message.")
+                    # Load steganographic text into output area for extraction
+                    self.output_text.setPlainText(content)
+                    # Clear results and show a hint to the user
+                    self.results_display.clear()
+                    self.results_display.append('<span style="color: #007bff; font-weight: bold;">📂 Steganographic text loaded. Use "Extract from Text" to reveal hidden message.</span>')
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to load file: {str(e)}")
     
@@ -940,10 +942,15 @@ class TextSteganographyTab(QWidget):
     
     def extract_from_text(self):
         """Extract secret message from text."""
-        stego_text = self.cover_text.toPlainText().strip()
+        # First try to get steganographic text from output area
+        stego_text = self.output_text.toPlainText().strip()
+        
+        # If output area is empty, fall back to cover text area
+        if not stego_text:
+            stego_text = self.cover_text.toPlainText().strip()
         
         if not stego_text:
-            QMessageBox.warning(self, "Warning", "Please enter text to extract from.")
+            QMessageBox.warning(self, "Warning", "Please enter steganographic text to extract from. Use 'Load Steganographic Text' or embed a message first.")
             return
         
         # Setup encryption if needed
