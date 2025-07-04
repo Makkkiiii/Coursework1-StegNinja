@@ -185,11 +185,29 @@ class WorkerThread(QThread):
             if message:
                 self.finished.emit(True, f"Extracted message: {message}")
             else:
-                self.finished.emit(False, "No hidden message found.")
+                # For whitespace method, check if this might be password-protected
+                if method == 'whitespace' and not password:
+                    # Try to detect if the text has encrypted whitespace data
+                    lines = self.kwargs['stego_text'].split('\n')
+                    whitespace_found = False
+                    for line in lines:
+                        trailing = line[len(line.rstrip()):]
+                        if trailing and len(trailing) > 5:  # Substantial whitespace suggests encryption
+                            whitespace_found = True
+                            break
+                    
+                    if whitespace_found:
+                        self.finished.emit(False, "Data appears to be encrypted but no password provided")
+                    else:
+                        self.finished.emit(False, "No hidden message found.")
+                else:
+                    self.finished.emit(False, "No hidden message found.")
         except ValueError as e:
             if "Invalid password" in str(e):
                 self.finished.emit(False, "Invalid password or corrupted data")
-            elif "no password provided" in str(e):
+            elif "no password provided" in str(e) or "password required" in str(e).lower():
+                self.finished.emit(False, "Data appears to be encrypted but no password provided")
+            elif "password protected" in str(e).lower() or "encrypted" in str(e).lower():
                 self.finished.emit(False, "Data appears to be encrypted but no password provided")
             else:
                 self.finished.emit(False, f"Extraction failed: {str(e)}")
@@ -967,8 +985,9 @@ class TextSteganographyTab(QWidget):
         
         if file_path:
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()  # DON'T strip for whitespace steganography!
+                # Use binary mode with explicit UTF-8 decoding to preserve whitespace
+                with open(file_path, 'rb') as f:
+                    content = f.read().decode('utf-8')  # DON'T strip for whitespace steganography!
                     # Load steganographic text into output area for extraction
                     self.output_text.setPlainText(content)
                     
@@ -989,6 +1008,7 @@ class TextSteganographyTab(QWidget):
                             self.method_combo.setCurrentText("Whitespace")
                             self.results_display.append(f'<span style="color: #007bff; font-weight: bold;">🔍 Auto-detect: {detection_message}</span>')
                             self.results_display.append('<span style="color: #28a745;">💡 Method set to Whitespace. Use "Extract from Text" to reveal message.</span>')
+                            self.results_display.append('<span style="color: #17a2b8;">📁 File loaded with whitespace preservation</span>')
                         elif detection_type == 'none':
                             self.results_display.append('<span style="color: #6c757d;">🔍 No steganographic content detected</span>')
                             self.results_display.append('<span style="color: #007bff; font-weight: bold;">📂 Text loaded for manual extraction</span>')
@@ -1160,9 +1180,11 @@ class TextSteganographyTab(QWidget):
         
         if file_path:
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    content = f.read()  # Don't strip - preserve whitespace steganography!
+                # Use binary mode with explicit UTF-8 decoding to preserve whitespace
+                with open(file_path, 'rb') as f:
+                    content = f.read().decode('utf-8')  # Don't strip - preserve whitespace steganography!
                     self.output_text.setPlainText(content)
+                self.results_display.append("📁 Text loaded with whitespace preservation")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to load file: {str(e)}")
     
@@ -1183,8 +1205,10 @@ class TextSteganographyTab(QWidget):
         
         if file_path:
             try:
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write(content)
+                # Use binary mode with explicit UTF-8 encoding to preserve whitespace
+                with open(file_path, 'wb') as f:
+                    f.write(content.encode('utf-8'))
+                self.results_display.append("💾 Steganographic text saved with whitespace preservation!")
                 QMessageBox.information(self, "Success", "Steganographic text saved successfully!")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to save file: {str(e)}")
