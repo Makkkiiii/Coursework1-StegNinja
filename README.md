@@ -24,7 +24,7 @@
 
 </div>
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## 📚 **Overview**
 
@@ -40,7 +40,7 @@
 
 </div>
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## 🎯 **What is StegNinja?**
 
@@ -50,7 +50,7 @@
   <img src="https://user-images.githubusercontent.com/placeholder/demo.gif" alt="StegNinja Demo" width="80%">
 </div>
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## ✨ **Key Features**
 
@@ -105,7 +105,7 @@
 </tr>
 </table>
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## 🎨 **Modern GUI Interface**
 
@@ -124,7 +124,7 @@
 - **🛡️ Error Handling**: Comprehensive validation and user guidance
 - **🎨 Professional Styling**: Modern Qt-based interface
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## 🚀 **Quick Start**
 
@@ -163,7 +163,7 @@ python -m pytest tests/ -v
 python main.py
 ```
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## 🏗️ **Architecture Overview**
 
@@ -188,7 +188,7 @@ python main.py
 └── 📁 Example/               # Sample files and demos
 ```
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## 🎯 **Usage Examples**
 
@@ -263,7 +263,7 @@ print(f"Hidden data: {data}")
 
 </details>
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## 🧪 **Testing & Quality Assurance**
 
@@ -288,7 +288,7 @@ python -m pytest tests/ --cov=src --cov-report=html
 - ✅ **GUI Components**: All interface elements
 - ✅ **Error Handling**: Edge cases and validation
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## 🔧 **Advanced Configuration**
 
@@ -316,7 +316,7 @@ crypto.set_encryption_mode('AES-256-GCM')  # Authenticated encryption
 
 </details>
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## 📊 **Performance Metrics**
 
@@ -331,7 +331,7 @@ crypto.set_encryption_mode('AES-256-GCM')  # Authenticated encryption
 
 </div>
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## 🌟 **What Makes StegNinja Special?**
 
@@ -374,7 +374,7 @@ crypto.set_encryption_mode('AES-256-GCM')  # Authenticated encryption
 </table>
 </div>
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## 🔐 **Security & Compliance**
 
@@ -398,7 +398,7 @@ crypto.set_encryption_mode('AES-256-GCM')  # Authenticated encryption
 - **🏢 Professional Use**: Suitable for authorized security testing
 - **⚠️ Responsible Disclosure**: Ethical use guidelines included
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## ⚠️ **Important Disclaimer**
 
@@ -406,7 +406,7 @@ crypto.set_encryption_mode('AES-256-GCM')  # Authenticated encryption
 >
 > StegNinja is designed for educational purposes, authorized security research, and legitimate penetration testing.
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 <div align="center">
 
@@ -415,7 +415,7 @@ crypto.set_encryption_mode('AES-256-GCM')  # Authenticated encryption
 
 </div>
 
----
+<img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="900">
 
 ## 📸 **Screenshots**
 
